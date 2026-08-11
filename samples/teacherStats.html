@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Attendance Stats - EduPortal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#2a1700",
+                    "primary-fixed-dim": "#ffb95f",
+                    "surface-dim": "#d2d9f4",
+                    "on-tertiary-fixed": "#171c1f",
+                    "on-surface-variant": "#534434",
+                    "primary-fixed": "#ffddb8",
+                    "surface-variant": "#dae2fd",
+                    "secondary-fixed": "#d5e3fc",
+                    "on-secondary-container": "#57657a",
+                    "on-primary": "#ffffff",
+                    "background": "#faf8ff",
+                    "tertiary-fixed-dim": "#c3c7cb",
+                    "secondary-container": "#d5e3fc",
+                    "on-surface": "#131b2e",
+                    "inverse-on-surface": "#eef0ff",
+                    "on-primary-container": "#613b00",
+                    "tertiary-container": "#adb2b6",
+                    "surface-container": "#eaedff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#43474b",
+                    "inverse-surface": "#283044",
+                    "inverse-primary": "#ffb95f",
+                    "on-secondary-fixed": "#0d1c2e",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed": "#dfe3e7",
+                    "secondary-fixed-dim": "#b9c7df",
+                    "tertiary": "#5a5f62",
+                    "surface-tint": "#855300",
+                    "surface-container-highest": "#dae2fd",
+                    "outline-variant": "#d8c3ad",
+                    "primary-container": "#f59e0b",
+                    "outline": "#867461",
+                    "secondary": "#515f74",
+                    "surface-container-high": "#e2e7ff",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f2f3ff",
+                    "on-tertiary-container": "#404548",
+                    "on-error-container": "#93000a",
+                    "surface-bright": "#faf8ff",
+                    "on-background": "#131b2e",
+                    "on-secondary-fixed-variant": "#3a485b",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#653e00",
+                    "surface": "#faf8ff",
+                    "error": "#ba1a1a",
+                    "primary": "#855300"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin": "24px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "base": "4px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "gutter": "20px",
+                    "sm": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "display": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-[260px] bg-surface border-r border-outline-variant shadow-sm flex flex-col h-full py-lg z-50">
+<div class="px-margin mb-xl">
+<h1 class="font-display text-display font-bold text-primary">EduPortal</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Instructor Panel</p>
+</div>
+<nav class="flex-1 px-sm space-y-sm">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-secondary-container hover:bg-secondary-container hover:text-primary transition-colors cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-secondary-container hover:bg-secondary-container hover:text-primary transition-colors cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="how_to_reg">how_to_reg</span>
+<span class="font-body-md text-body-md">Attendance</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-secondary-container hover:bg-secondary-container hover:text-primary transition-colors cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-body-md text-body-md">Fee</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-md px-md py-sm bg-secondary-container rounded-lg text-primary font-bold border-r-4 border-primary cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats" data-weight="fill" style="font-variation-settings: 'FILL' 1;">query_stats</span>
+<span class="font-body-md text-body-md font-bold">Attendance Stats</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-secondary-container hover:bg-secondary-container hover:text-primary transition-colors cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-body-md text-body-md">Notes</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="ml-[260px] flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 w-full bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center px-lg h-16">
+<div class="flex items-center gap-md">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Teacher Dashboard</h2>
+</div>
+<div class="flex items-center gap-lg">
+<div class="relative w-64 hidden md:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-xl pr-sm py-sm rounded-full bg-surface-container-low border border-outline-variant focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 font-body-md text-body-md outline-none transition-all duration-200" placeholder="Search..." type="text"/>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+</div>
+<div class="h-8 w-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant">
+<img alt="Professor Avatar" class="object-cover w-full h-full" data-alt="Professional headshot of a teacher, well-lit studio lighting, neutral background, looking friendly and approachable. Modern corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKyDbBNwLgoGqKX7pVQWvG0zi2iCu_ypkcjHiTQfGhf8i6YYazT79PuSBpjJBEh7JhR8H-ZOVPbmJOXfBXhJIDvXFuLNcHA4UtUi9HWSBzF-MhAwwuFfUkRVKe4jbu1b3pqR5_y8HG2bl_p8Jpg4fzDkcX30AxBAUYS1KbWJT4SDzzoOSUNXXMit18lpz3gb-d6h_eSfPSb0NtwkqunTPs_U81xtRHDbKCCNYASF1Jqu8eEOCr2pPm"/>
+</div>
+</div>
+</header>
+<!-- Page Content Canvas -->
+<main class="flex-1 p-margin bg-background">
+<!-- Section 1: Single Student Overview -->
+<section class="mb-xl">
+<!-- Filters Row -->
+<div class="flex flex-wrap items-end justify-between gap-md mb-md">
+<div class="w-full md:w-1/3 min-w-[250px]">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Select Student</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface border border-outline-variant rounded-lg px-md py-sm pr-xl font-body-md text-body-md focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 outline-none">
+<option>Alice Johnson (MA260906)</option>
+<option>Bob Smith (MA260907)</option>
+<option>Charlie Davis (MA260908)</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="flex gap-md w-full md:w-auto">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Month</label>
+<select class="appearance-none bg-surface border border-outline-variant rounded-lg px-md py-sm pr-xl font-body-md text-body-md focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 outline-none">
+<option>October</option>
+<option>November</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Year</label>
+<select class="appearance-none bg-surface border border-outline-variant rounded-lg px-md py-sm pr-xl font-body-md text-body-md focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 outline-none">
+<option>2023</option>
+<option>2024</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<!-- Large Card: Donut Chart -->
+<div class="md:col-span-2 bg-surface rounded-xl shadow-sm border border-outline-variant p-lg flex flex-col items-center justify-center min-h-[240px]">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md self-start w-full text-center">Total Attendance %</h3>
+<!-- Simple CSS Donut representation for demo -->
+<div class="relative w-32 h-32 rounded-full flex items-center justify-center bg-surface-container-low" style="background: conic-gradient(var(--tw-colors-primary-container) 85%, var(--tw-colors-surface-container-highest) 0);">
+<div class="absolute inset-2 bg-surface rounded-full flex items-center justify-center">
+<span class="font-display text-display font-bold text-on-surface">85%</span>
+</div>
+</div>
+</div>
+<!-- Small Square 1: Presents -->
+<div class="bg-surface rounded-xl shadow-sm border border-outline-variant p-lg flex flex-col items-center justify-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mb-sm">
+<span class="material-symbols-outlined text-primary-container text-3xl" data-icon="check_circle">check_circle</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-xs uppercase tracking-wider">Total Presents</p>
+<p class="font-display text-display font-bold text-on-surface">22</p>
+</div>
+<!-- Small Square 2: Absents -->
+<div class="bg-surface rounded-xl shadow-sm border border-outline-variant p-lg flex flex-col items-center justify-center">
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center mb-sm">
+<span class="material-symbols-outlined text-error text-3xl" data-icon="cancel">cancel</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-xs uppercase tracking-wider">Total Absents</p>
+<p class="font-display text-display font-bold text-on-surface">4</p>
+</div>
+<!-- Medium Card: Fee Status -->
+<div class="md:col-span-2 md:col-start-3 bg-surface rounded-xl shadow-sm border border-outline-variant p-lg flex flex-col items-center justify-center">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Fee Status</h3>
+<div class="px-xl py-sm bg-primary-container text-on-primary-container rounded-full font-headline-md text-headline-md font-bold shadow-sm">
+                            SUBMITTED
+                         </div>
+</div>
+</div>
+</section>
+<!-- Section 2: Class Overview Table -->
+<section class="bg-surface rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+<div class="flex justify-between items-center p-md border-b border-outline-variant bg-surface-bright">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">All Students Overview</h3>
+<div class="flex gap-sm">
+<select class="appearance-none bg-surface border border-outline-variant rounded-md px-sm py-xs font-label-md text-label-md outline-none text-on-surface-variant">
+<option>Oct 2023</option>
+</select>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="p-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Student Name</th>
+<th class="p-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Registration No.</th>
+<th class="p-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Attendance %</th>
+<th class="p-md font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Fee Status</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-md font-semibold">Alice Johnson</td>
+<td class="p-md text-on-surface-variant">MA260906</td>
+<td class="p-md">
+<div class="flex items-center gap-sm">
+<span class="w-8">85%</span>
+<div class="w-24 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[85%] rounded-full"></div>
+</div>
+</div>
+</td>
+<td class="p-md">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-container-highest text-primary-container font-label-md text-label-md">
+                                        Submitted
+                                    </span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-md font-semibold">Bob Smith</td>
+<td class="p-md text-on-surface-variant">MA260907</td>
+<td class="p-md">
+<div class="flex items-center gap-sm">
+<span class="w-8">45%</span>
+<div class="w-24 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-error w-[45%] rounded-full"></div>
+</div>
+</div>
+</td>
+<td class="p-md">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-error-container text-error font-label-md text-label-md">
+                                        Pending
+                                    </span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-md font-semibold">Charlie Davis</td>
+<td class="p-md text-on-surface-variant">MA260908</td>
+<td class="p-md">
+<div class="flex items-center gap-sm">
+<span class="w-8">92%</span>
+<div class="w-24 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[92%] rounded-full"></div>
+</div>
+</div>
+</td>
+<td class="p-md">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-surface-container-highest text-primary-container font-label-md text-label-md">
+                                        Submitted
+                                    </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-md border-t border-outline-variant flex justify-between items-center px-lg bg-surface">
+<p class="font-label-md text-label-md text-on-surface-variant">© 2024 EduPortal Admin Systems. All rights reserved.</p>
+<div class="flex gap-lg">
+<a class="font-label-md text-label-md text-on-secondary-container hover:text-primary transition-colors" href="#">Support</a>
+<a class="font-label-md text-label-md text-on-secondary-container hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-md text-label-md text-on-secondary-container hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+</footer>
+</div>
+</body></html>

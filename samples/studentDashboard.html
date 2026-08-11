@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MyAcademy Student Portal - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#514538",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#131b2e",
+                        "primary": "#653e00",
+                        "secondary-fixed": "#d5e3fc",
+                        "tertiary-fixed-dim": "#c3c7ca",
+                        "on-primary-fixed": "#2a1700",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "on-secondary-container": "#556379",
+                        "on-secondary-fixed-variant": "#3a485c",
+                        "secondary-container": "#d2e1fa",
+                        "accent-amber": "#f59e0b",
+                        "surface-tint": "#855300",
+                        "surface-dim": "#d2d9f4",
+                        "inverse-surface": "#283044",
+                        "outline-variant": "#d5c4b2",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#dfe3e6",
+                        "primary-fixed": "#ffddb8",
+                        "on-tertiary-container": "#d5d9dc",
+                        "secondary-fixed-dim": "#b9c7e0",
+                        "doc-blue": "#3b82f6",
+                        "surface-container-low": "#f2f3ff",
+                        "background": "#faf8ff",
+                        "on-background": "#131b2e",
+                        "outline": "#837566",
+                        "on-primary-fixed-variant": "#653e00",
+                        "error": "#ba1a1a",
+                        "primary-container": "#855300",
+                        "tertiary-container": "#5a5f62",
+                        "on-tertiary-fixed": "#171c1f",
+                        "error-container": "#ffdad6",
+                        "border-subtle": "#e2e8f0",
+                        "surface-bright": "#faf8ff",
+                        "surface-container-highest": "#dae2fc",
+                        "ppt-orange": "#f97316",
+                        "on-tertiary-fixed-variant": "#42474a",
+                        "pdf-red": "#ef4444",
+                        "primary-fixed-dim": "#fdb965",
+                        "surface": "#faf8ff",
+                        "surface-bg": "#f8fafc",
+                        "on-primary-container": "#ffd09a",
+                        "surface-container-high": "#e1e7ff",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary": "#515f74",
+                        "surface-container": "#eaedff",
+                        "inverse-primary": "#fdb965",
+                        "tertiary": "#42474a",
+                        "inverse-on-surface": "#eef0ff",
+                        "surface-variant": "#dae2fc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "margin": "24px",
+                        "sidebar-width": "260px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "gutter": "20px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Hanken Grotesk"],
+                        "caption": ["Hanken Grotesk"],
+                        "display": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "caption": ["10px", { "lineHeight": "14px", "fontWeight": "400" }],
+                        "display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .donut-segment-present { stroke: #10b981; stroke-dasharray: 85 15; }
+        .donut-segment-absent { stroke: #ef4444; stroke-dasharray: 10 90; stroke-dashoffset: -85; }
+        .donut-segment-leave { stroke: #f59e0b; stroke-dasharray: 5 95; stroke-dashoffset: -95; }
+    </style>
+</head>
+<body class="bg-surface-bg text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 z-50 flex justify-between items-center px-margin py-md w-full max-w-full bg-surface-container-lowest dark:bg-surface-dim border-b border-border-subtle dark:border-outline-variant shadow-sm dark:shadow-none">
+<div class="flex items-center gap-md">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+<span class="material-symbols-outlined align-middle mr-xs">school</span>
+                MyAcademy Student Portal
+            </div>
+</div>
+<nav class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant dark:text-tertiary-fixed-dim font-medium hover:text-primary dark:hover:text-primary-fixed transition-colors duration-200 flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-label-md text-label-md">Notes</span>
+</a>
+<div class="h-6 w-px bg-border-subtle mx-sm"></div>
+<button class="text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md flex items-center gap-xs">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                 Logout
+            </button>
+<img alt="Student Avatar" class="w-10 h-10 rounded-full object-cover border border-border-subtle" data-alt="A professional headshot of a student, smiling gently, wearing a neat collared shirt. Clean white background, soft studio lighting highlighting facial features. High quality, modern portrait style suitable for a corporate or academic profile avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwZhr55_H9wGGeL5QC7lghsWGEIiHH7kFa1UCB8ahgynAUavRZrWG-DyQDbRhUqLDmYMW37Jo38FyhbvhusOmf4YHEQvVIbl8ae6W1qiX-WNsy7K5cV2aiFLgDEh3gFTDmxsnDQKNzwXKMjkwaLNUH7FPfh-v6yOAcweiV5H0_aKAAlXSGt8l0f6RYQwo3vu5c-lqcwNkshghaxc_pnPLC-h8kMgcmMXnkjpDz3qp_RSx0iH-xVJSK"/>
+</nav>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-[1440px] mx-auto px-margin py-xl flex flex-col gap-xl">
+<!-- Hero Section -->
+<section class="flex flex-col md:flex-row justify-between items-start md:items-end gap-md">
+<div>
+<h1 class="font-display text-display text-on-surface mb-sm">Welcome back, Alex 👋</h1>
+<div class="flex flex-wrap gap-sm">
+<span class="bg-surface-container text-on-secondary-container px-sm py-xs rounded-DEFAULT font-label-md text-label-md border border-border-subtle">
+                        Reg No: MA260906
+                    </span>
+<span class="bg-surface-container text-on-secondary-container px-sm py-xs rounded-DEFAULT font-label-md text-label-md border border-border-subtle">
+                        Class: Class 9
+                    </span>
+<span class="bg-surface-container text-on-secondary-container px-sm py-xs rounded-DEFAULT font-label-md text-label-md border border-border-subtle">
+                        Teacher: Mr. Roberts
+                    </span>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<label class="font-label-md text-label-md text-secondary" for="record-filter">View Record:</label>
+<select class="bg-surface-container-lowest border border-border-subtle rounded-DEFAULT px-sm py-xs font-body-md text-body-md focus:ring-1 focus:ring-primary focus:border-primary" id="record-filter">
+<option>All-Time</option>
+<option>Monthly</option>
+</select>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-gutter auto-rows-[minmax(180px,auto)]">
+<!-- 1. Attendance Summary (Bento Cell: 4 cols) -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest border border-border-subtle shadow-sm rounded-lg p-md flex flex-col hover:border-primary-fixed-dim transition-colors duration-200">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary">event_available</span> Attendance Summary
+                </h2>
+<div class="flex-grow flex items-center justify-between gap-md">
+<!-- Simple SVG Donut Chart -->
+<div class="relative w-24 h-24 flex-shrink-0">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<!-- Background Track -->
+<circle cx="18" cy="18" fill="transparent" r="15.91549430918954" stroke="#e2e8f0" stroke-width="3"></circle>
+<!-- Segments -->
+<circle class="donut-segment-present" cx="18" cy="18" fill="transparent" r="15.91549430918954" stroke-width="3"></circle>
+<circle class="donut-segment-absent" cx="18" cy="18" fill="transparent" r="15.91549430918954" stroke-width="3"></circle>
+<circle class="donut-segment-leave" cx="18" cy="18" fill="transparent" r="15.91549430918954" stroke-width="3"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-md text-headline-md font-bold text-on-surface leading-none">85%</span>
+</div>
+</div>
+<div class="flex flex-col gap-xs w-full">
+<div class="flex justify-between items-center text-sm font-body-md text-body-md">
+<span class="flex items-center gap-xs"><div class="w-2 h-2 rounded-full bg-emerald-500"></div>Presents</span>
+<span class="font-bold">142</span>
+</div>
+<div class="flex justify-between items-center text-sm font-body-md text-body-md">
+<span class="flex items-center gap-xs"><div class="w-2 h-2 rounded-full bg-red-500"></div>Absents</span>
+<span class="font-bold">18</span>
+</div>
+<div class="flex justify-between items-center text-sm font-body-md text-body-md">
+<span class="flex items-center gap-xs"><div class="w-2 h-2 rounded-full bg-amber-500"></div>Leaves</span>
+<span class="font-bold">7</span>
+</div>
+</div>
+</div>
+</article>
+<!-- 2. Fee Status (Bento Cell: 4 cols) -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest border border-border-subtle shadow-sm rounded-lg p-md flex flex-col justify-between hover:border-primary-fixed-dim transition-colors duration-200">
+<div class="flex justify-between items-start">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span> Fee Status
+                    </h2>
+<span class="bg-emerald-100 text-emerald-800 px-sm py-[2px] rounded-DEFAULT font-label-md text-label-md font-bold">PAID</span>
+</div>
+<div>
+<p class="font-display text-display text-on-surface mb-xs">Rs. 3,500</p>
+<p class="font-body-md text-body-md text-secondary">Last paid: Oct 5, 2023</p>
+</div>
+</article>
+<!-- 3. Academy Notice Board (Bento Cell: 4 cols, spans 2 rows) -->
+<article class="col-span-1 md:col-span-4 md:row-span-2 bg-surface-container-lowest border border-border-subtle shadow-sm rounded-lg flex flex-col hover:border-primary-fixed-dim transition-colors duration-200">
+<div class="p-md border-b border-border-subtle">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary">campaign</span> Academy Notice Board
+                    </h2>
+</div>
+<div class="flex-grow p-md overflow-y-auto flex flex-col gap-md">
+<!-- Notice Item -->
+<div class="pb-sm border-b border-border-subtle border-dashed last:border-0 last:pb-0">
+<p class="font-label-md text-label-md text-accent-amber mb-[2px]">Oct 15, 2023</p>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface">Mid-Term Exam Schedule Released</h3>
+<p class="font-body-md text-body-md text-secondary mt-xs line-clamp-2">The schedule for the upcoming mid-term examinations for all classes is now available on the portal.</p>
+</div>
+<!-- Notice Item -->
+<div class="pb-sm border-b border-border-subtle border-dashed last:border-0 last:pb-0">
+<p class="font-label-md text-label-md text-accent-amber mb-[2px]">Oct 10, 2023</p>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface">Science Fair Project Submissions</h3>
+<p class="font-body-md text-body-md text-secondary mt-xs line-clamp-2">Reminder to submit your Science Fair project proposals to your respective class teachers by Friday.</p>
+</div>
+<!-- Notice Item -->
+<div class="pb-sm border-b border-border-subtle border-dashed last:border-0 last:pb-0">
+<p class="font-label-md text-label-md text-accent-amber mb-[2px]">Oct 02, 2023</p>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface">Holiday Announcement</h3>
+<p class="font-body-md text-body-md text-secondary mt-xs line-clamp-2">The academy will remain closed on Oct 4th due to local public holidays.</p>
+</div>
+</div>
+<div class="p-md border-t border-border-subtle bg-surface-bg mt-auto">
+<button class="w-full text-center font-label-md text-label-md text-primary hover:text-surface-tint transition-colors">View All Notices</button>
+</div>
+</article>
+<!-- 4. Attendance Trend (Bento Cell: 8 cols) -->
+<article class="col-span-1 md:col-span-8 bg-surface-container-lowest border border-border-subtle shadow-sm rounded-lg p-md flex flex-col hover:border-primary-fixed-dim transition-colors duration-200">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary">trending_up</span> Attendance Trend
+                </h2>
+<div class="flex-grow w-full h-full min-h-[150px] relative">
+<!-- Decorative SVG Line Chart -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 100 40">
+<path d="M0,35 Q10,20 20,30 T40,15 T60,25 T80,5 T100,10 L100,40 L0,40 Z" fill="url(#trend-gradient)" opacity="0.3"></path>
+<path d="M0,35 Q10,20 20,30 T40,15 T60,25 T80,5 T100,10" fill="none" stroke="#653e00" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<!-- Data Points -->
+<circle cx="20" cy="30" fill="#ffffff" r="1.5" stroke="#653e00" stroke-width="1" vector-effect="non-scaling-stroke"></circle>
+<circle cx="40" cy="15" fill="#ffffff" r="1.5" stroke="#653e00" stroke-width="1" vector-effect="non-scaling-stroke"></circle>
+<circle cx="60" cy="25" fill="#ffffff" r="1.5" stroke="#653e00" stroke-width="1" vector-effect="non-scaling-stroke"></circle>
+<circle cx="80" cy="5" fill="#ffffff" r="1.5" stroke="#653e00" stroke-width="1" vector-effect="non-scaling-stroke"></circle>
+<defs>
+<lineargradient id="trend-gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#653e00" stop-opacity="1"></stop>
+<stop offset="100%" stop-color="#ffffff" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Y Axis Labels -->
+<div class="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] text-secondary pointer-events-none">
+<span>100%</span>
+<span>50%</span>
+<span>0%</span>
+</div>
+</div>
+</article>
+<!-- 5. Recent Study Notes (Bento Cell: 12 cols, full width section at bottom) -->
+<article class="col-span-1 md:col-span-12 bg-surface-container-lowest border border-border-subtle shadow-sm rounded-lg p-md hover:border-primary-fixed-dim transition-colors duration-200">
+<div class="flex justify-between items-center mb-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary">folder_open</span> Recent Study Notes
+                    </h2>
+<a class="font-label-md text-label-md text-primary hover:underline" href="#">View All Notes</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Note Card -->
+<div class="border border-border-subtle rounded-DEFAULT p-sm flex items-center justify-between hover:bg-surface-bg transition-colors">
+<div class="flex items-center gap-sm">
+<span class="bg-secondary-container text-on-secondary-container p-xs rounded-DEFAULT material-symbols-outlined">picture_as_pdf</span>
+<div>
+<h3 class="font-body-md text-body-md font-semibold text-on-surface">Physics - Chapter 4</h3>
+<p class="font-caption text-caption text-secondary">Added 2 days ago</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full hover:bg-primary-container text-primary flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+<!-- Note Card -->
+<div class="border border-border-subtle rounded-DEFAULT p-sm flex items-center justify-between hover:bg-surface-bg transition-colors">
+<div class="flex items-center gap-sm">
+<span class="bg-secondary-container text-on-secondary-container p-xs rounded-DEFAULT material-symbols-outlined">description</span>
+<div>
+<h3 class="font-body-md text-body-md font-semibold text-on-surface">Math - Algebra Review</h3>
+<p class="font-caption text-caption text-secondary">Added 1 week ago</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full hover:bg-primary-container text-primary flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+<!-- Note Card -->
+<div class="border border-border-subtle rounded-DEFAULT p-sm flex items-center justify-between hover:bg-surface-bg transition-colors">
+<div class="flex items-center gap-sm">
+<span class="bg-secondary-container text-on-secondary-container p-xs rounded-DEFAULT material-symbols-outlined">picture_as_pdf</span>
+<div>
+<h3 class="font-body-md text-body-md font-semibold text-on-surface">Chemistry - Lab Manual</h3>
+<p class="font-caption text-caption text-secondary">Added 2 weeks ago</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full hover:bg-primary-container text-primary flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+</div>
+</article>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-xl px-margin flex flex-col md:flex-row justify-between items-center gap-md bg-surface-container-low dark:bg-inverse-surface border-t border-border-subtle dark:border-outline-variant mt-auto">
+<div class="font-label-md text-label-md font-bold text-on-surface dark:text-inverse-on-surface">
+            © 2024 MyAcademy Student Portal. All rights reserved.
+        </div>
+<nav class="flex gap-md font-body-md text-body-md text-secondary dark:text-secondary-fixed-dim">
+<a class="hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary dark:hover:text-primary-fixed transition-colors" href="#">Support</a>
+</nav>
+</footer>
+</body></html>
