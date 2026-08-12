@@ -19,7 +19,11 @@ const PORT = dotenvConfig.parsed?.PORT || process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://myacademy-portal-1.onrender.com'],
+  origin: [
+    'https://myacademyportal.online',
+    'https://www.myacademyportal.online',
+    'http://localhost:5173'
+  ],
   credentials: true
 }));
 app.use(express.json());
