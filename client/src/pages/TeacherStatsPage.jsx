@@ -103,12 +103,12 @@ export default function TeacherStatsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex w-full max-w-full overflow-x-hidden">
       {/* Sidebar Navigation */}
       <TeacherSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-[260px]">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-[260px] max-w-full">
         {/* Mobile Header */}
         <MobileHeader />
 
@@ -121,7 +121,7 @@ export default function TeacherStatsPage() {
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-8">
+        <main className="flex-1 p-4 sm:p-6 space-y-8 min-w-0">
           
           {/* Section 1: Single Student Overview (Bento Grid) */}
           <section className="space-y-4">
@@ -320,7 +320,7 @@ export default function TeacherStatsPage() {
 
             {/* Class Data Table */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-w-full w-full">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">

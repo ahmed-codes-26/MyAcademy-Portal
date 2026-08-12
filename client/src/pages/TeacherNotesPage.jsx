@@ -181,12 +181,12 @@ export default function TeacherNotesPage() {
   const groupedNotes = getGroupedNotes();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex w-full max-w-full overflow-x-hidden">
       {/* Sidebar Navigation */}
       <TeacherSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-[260px]">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-[260px] max-w-full">
         {/* Mobile Header */}
         <MobileHeader />
 
@@ -199,7 +199,7 @@ export default function TeacherNotesPage() {
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6">
+        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">Course Notes & Resources</h1>
             <p className="text-sm text-slate-500 mt-1">Manage and distribute study materials across your classes.</p>
@@ -211,7 +211,7 @@ export default function TeacherNotesPage() {
             <div className="xl:col-span-4 flex flex-col">
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col h-fit sticky top-20">
                 <div className="flex items-center gap-2 mb-6">
-                  <Upload className="w-5 h-5 text-amber-500" />
+                  <Upload className="w-5 h-5 text-amber-500 shrink-0" />
                   <h3 className="text-lg font-bold text-slate-800">Upload New Note</h3>
                 </div>
 
@@ -274,7 +274,7 @@ export default function TeacherNotesPage() {
                   </div>
 
                   {/* Class and Subject */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                         Class

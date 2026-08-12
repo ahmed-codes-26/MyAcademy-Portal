@@ -3,7 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 export default function UserTable({ columns, data, onEdit, onDelete, loading }) {
   if (loading) {
     return (
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-w-full w-full">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
@@ -54,7 +54,7 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading }) 
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto max-w-full w-full">
       <table className="w-full text-left">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">

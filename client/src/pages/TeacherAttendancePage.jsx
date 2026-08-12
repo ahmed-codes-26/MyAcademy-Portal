@@ -180,12 +180,12 @@ export default function TeacherAttendancePage() {
   const isTodaySelected = formatLocalDate(selectedDate) === formatLocalDate(new Date());
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex w-full max-w-full overflow-x-hidden">
       {/* Sidebar Navigation */}
       <TeacherSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-[260px]">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-[260px] max-w-full">
         {/* Mobile Header */}
         <MobileHeader />
 
@@ -198,7 +198,7 @@ export default function TeacherAttendancePage() {
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6">
+        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
           {/* Calendar and Header Controls Row */}
           <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
             {/* Left Header Info */}
@@ -309,7 +309,7 @@ export default function TeacherAttendancePage() {
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full w-full">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">

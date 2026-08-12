@@ -82,12 +82,12 @@ export default function TeacherDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex w-full max-w-full overflow-x-hidden">
       {/* Sidebar Navigation */}
       <TeacherSidebar />
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col lg:pl-[260px]">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-[260px] max-w-full">
         {/* Mobile Header */}
         <MobileHeader />
 
@@ -108,7 +108,7 @@ export default function TeacherDashboardPage() {
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6">
+        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
           {/* Summary Metrics */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Fee Received */}

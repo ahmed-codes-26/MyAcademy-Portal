@@ -59,12 +59,12 @@ export default function TeacherFeePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex w-full max-w-full overflow-x-hidden">
       {/* Sidebar Navigation */}
       <TeacherSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-[260px]">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-[260px] max-w-full">
         {/* Mobile Header */}
         <MobileHeader />
 
@@ -77,7 +77,7 @@ export default function TeacherFeePage() {
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6">
+        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
           {/* Header & Filters Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -86,9 +86,9 @@ export default function TeacherFeePage() {
             </div>
 
             {/* Dropdown Filters */}
-            <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm self-start sm:self-auto">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm self-start sm:self-auto">
               <div className="flex items-center gap-1.5 px-2 text-slate-400">
-                <Calendar className="w-4 h-4 text-amber-500" />
+                <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Period:</span>
               </div>
               <select
@@ -121,7 +121,7 @@ export default function TeacherFeePage() {
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full w-full">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">

@@ -98,7 +98,7 @@ export default function TeacherForm({ teacher, onSubmit, onClose }) {
           </div>
 
           {/* Phone and Batch — side by side */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                 Phone <span className="text-red-500">*</span>

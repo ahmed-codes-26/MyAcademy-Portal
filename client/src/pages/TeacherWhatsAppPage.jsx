@@ -63,12 +63,12 @@ export default function TeacherWhatsAppPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex w-full max-w-full overflow-x-hidden">
       {/* Sidebar Navigation */}
       <TeacherSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-[260px]">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-[260px] max-w-full">
         {/* Mobile Header */}
         <MobileHeader />
 
@@ -81,7 +81,7 @@ export default function TeacherWhatsAppPage() {
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full min-w-0">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">WhatsApp Setup</h1>
             <p className="text-sm text-slate-500 mt-1">Link your personal WhatsApp account to send alerts directly from the portal.</p>

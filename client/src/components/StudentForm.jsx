@@ -163,7 +163,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
           </div>
 
           {/* Class and Teacher — side by side */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                 Class <span className="text-red-500">*</span>
@@ -202,7 +202,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
           </div>
 
           {/* Fees and Fees Paid — side by side */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                 Fees (PKR) <span className="text-red-500">*</span>
@@ -242,7 +242,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
           </div>
 
           {/* Phone and Password — side by side */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                 Phone <span className="text-red-500">*</span>

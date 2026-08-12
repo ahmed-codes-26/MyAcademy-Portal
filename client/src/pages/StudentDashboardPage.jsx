@@ -122,13 +122,13 @@ export default function StudentDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans w-full max-w-full overflow-x-hidden">
       {/* 1. Top Navigation Bar (No Sidebar) */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm w-full">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Left Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-sm">
+            <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-sm shrink-0">
               <GraduationCap className="w-5 h-5" />
             </div>
             <span className="font-sans font-bold text-xl text-slate-900 tracking-tight">
@@ -140,12 +140,12 @@ export default function StudentDashboardPage() {
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={scrollToNotes}
               className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors"
             >
-              <FileText className="w-4 h-4 text-amber-500" />
+              <FileText className="w-4 h-4 text-amber-500 shrink-0" />
               <span className="hidden sm:inline">Notes</span>
             </button>
 
@@ -155,7 +155,7 @@ export default function StudentDashboardPage() {
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-red-600 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">Logout</span>
             </button>
 
@@ -172,7 +172,7 @@ export default function StudentDashboardPage() {
       </header>
 
       {/* 2. Main Content Area */}
-      <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1">
+      <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1 min-w-0">
         {/* Hero Section */}
         <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div>

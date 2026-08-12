@@ -85,10 +85,10 @@ export default function AccountPage() {
     .slice(0, 2) || 'AD';
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 w-full max-w-full overflow-x-hidden">
       <Navbar />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
         {/* Back button */}
         <button
           onClick={() => navigate('/')}
@@ -105,7 +105,7 @@ export default function AccountPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">
             Profile Picture
           </h2>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
             <div className="relative">
               {admin?.profilePicture ? (
                 <img
