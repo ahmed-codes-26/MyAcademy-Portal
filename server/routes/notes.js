@@ -16,8 +16,8 @@ const upload = multer({
 
 /**
  * GET /api/notes/:id/download
- * Generate a time-limited signed download link for restricted files and redirect.
- * Enforces JWT authentication to ensure only authorized users can download notes.
+ * Generate a time-limited signed download link for restricted files and return JSON.
+ * Enforces JWT authentication to ensure only authorized users can request download links.
  */
 router.get('/:id/download', auth, async (req, res) => {
   try {
@@ -26,10 +26,10 @@ router.get('/:id/download', auth, async (req, res) => {
       return res.status(404).json({ message: 'Note not found.' });
     }
 
-    // Safety fallback: if publicId is missing (e.g. legacy notes), redirect directly to raw url
+    // Safety fallback: if publicId is missing (e.g. legacy notes), return direct fileUrl
     if (!note.publicId) {
-      console.warn(`Note ${note._id} publicId is missing. Redirecting to direct file URL.`);
-      return res.redirect(note.fileUrl);
+      console.warn(`Note ${note._id} publicId is missing. Returning direct file URL.`);
+      return res.json({ downloadUrl: note.fileUrl });
     }
 
     const isImage = ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(note.fileType.toUpperCase());
@@ -43,7 +43,7 @@ router.get('/:id/download', auth, async (req, res) => {
       expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour expiration
     });
 
-    res.redirect(signedUrl);
+    res.json({ downloadUrl: signedUrl });
   } catch (error) {
     console.error('Generate download URL error:', error);
     res.status(500).json({ message: 'Error generating download URL.' });

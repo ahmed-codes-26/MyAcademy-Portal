@@ -30,15 +30,15 @@ export default function TeacherNotesPage() {
   const handleDownloadNote = async (note) => {
     setDownloadingId(note._id);
     try {
-      const res = await api.get(`/notes/${note._id}/download`, {
-        responseType: 'blob',
-      });
-      const blob = new Blob([res.data], {
-        type: res.headers['content-type'] || 'application/octet-stream',
-      });
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const res = await api.get(`/notes/${note._id}/download`);
+      const downloadUrl = res.data?.downloadUrl;
+      if (!downloadUrl) {
+        throw new Error('Download URL not available.');
+      }
       const link = document.createElement('a');
       link.href = downloadUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
       const ext = (note.fileType || 'pdf').toLowerCase();
       const rawName = note.displayName || `note_${note._id}`;
       const fileName = rawName.toLowerCase().endsWith(`.${ext}`)
@@ -48,7 +48,6 @@ export default function TeacherNotesPage() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error('Download note error:', err);
       toast.error('Failed to download study note.');
