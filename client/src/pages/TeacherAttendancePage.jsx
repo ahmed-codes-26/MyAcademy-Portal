@@ -3,7 +3,7 @@ import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
 import { useToast } from '../components/Toast';
-import { ChevronLeft, ChevronRight, Check, Edit2, Calendar, HelpCircle, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Edit2, Calendar, HelpCircle, Loader2, Trash2 } from 'lucide-react';
 
 export default function TeacherAttendancePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -14,6 +14,7 @@ export default function TeacherAttendancePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingAttendance, setDeletingAttendance] = useState(false);
 
   const toast = useToast();
 
@@ -23,6 +24,31 @@ export default function TeacherAttendancePage() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  };
+
+  const handleResetAttendance = async () => {
+    const dateStr = formatLocalDate(selectedDate);
+    if (
+      !window.confirm(
+        `Are you sure you want to delete and reset the attendance record for ${dateStr}? This will clear all recorded entries for this date so you can take attendance fresh.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingAttendance(true);
+    try {
+      await api.delete(`/teacher/attendance?date=${dateStr}`);
+      toast.success('Attendance record reset successfully!');
+      setIsSubmitted(false);
+      setIsEditing(true);
+      fetchAttendanceDates();
+      fetchAttendance();
+    } catch {
+      toast.error('Failed to reset attendance record.');
+    } finally {
+      setDeletingAttendance(false);
+    }
   };
 
   // Fetch dates with submitted attendance
@@ -217,15 +243,31 @@ export default function TeacherAttendancePage() {
                   )}
                 </h1>
 
-                {/* Edit Button */}
-                {isSubmitted && !isEditing && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-fit"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    Edit Attendance
-                  </button>
+                {/* Action Buttons when Submitted */}
+                {isSubmitted && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {!isEditing && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-fit"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Edit Attendance
+                      </button>
+                    )}
+                    <button
+                      onClick={handleResetAttendance}
+                      disabled={deletingAttendance}
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-fit disabled:opacity-50"
+                    >
+                      {deletingAttendance ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                      Reset Attendance
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -313,6 +355,7 @@ export default function TeacherAttendancePage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                    <th className="px-6 py-3.5 w-12 text-center">#</th>
                     <th className="px-6 py-3.5">Student Details</th>
                     <th className="px-6 py-3.5 text-center w-40">Status</th>
                     <th className="px-6 py-3.5 text-right w-48">Actions</th>
@@ -321,7 +364,7 @@ export default function TeacherAttendancePage() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-10">
+                      <td colSpan={4} className="px-6 py-10">
                         <div className="flex items-center justify-center gap-2 text-slate-400">
                           <Loader2 className="w-5 h-5 animate-spin" />
                           <span>Loading student rosters...</span>
@@ -330,17 +373,20 @@ export default function TeacherAttendancePage() {
                     </tr>
                   ) : students.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-10 text-center text-slate-400 font-medium">
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-400 font-medium">
                         No students found.
                       </td>
                     </tr>
                   ) : (
-                    students.map((student) => {
+                    students.map((student, index) => {
                       const isPresent = student.status === 'present';
                       const isLeave = student.status === 'leave';
 
                       return (
                         <tr key={student._id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-3.5 text-center font-mono text-xs text-slate-400 font-bold">
+                            {index + 1}
+                          </td>
                           {/* Student Info */}
                           <td className="px-6 py-3.5">
                             <div className="flex items-center gap-3">

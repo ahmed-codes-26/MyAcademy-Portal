@@ -167,6 +167,7 @@ export default function DashboardPage() {
   // ---------- Table Columns ----------
 
   const studentColumns = [
+    { key: '#', label: '#', render: (_, index, srNo) => srNo || index + 1 },
     { key: 'rollNumber', label: 'Roll Number' },
     { key: 'name', label: 'Name' },
     {
@@ -188,6 +189,7 @@ export default function DashboardPage() {
   ];
 
   const teacherColumns = [
+    { key: '#', label: '#', render: (_, index, srNo) => srNo || index + 1 },
     { key: 'name', label: 'Name' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Phone' },

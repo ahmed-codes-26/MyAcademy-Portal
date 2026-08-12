@@ -38,12 +38,32 @@ router.get('/dashboard', async (req, res) => {
 
     const totalStudents = students.length;
 
-    // 2. Calculate fee received and remaining
+    // 2. Calculate fee received and remaining based on current month's FeePayment records
+    const currentMonth = new Date().getMonth(); // 0-11
+    const currentYear = new Date().getFullYear();
+
+    const studentIds = students.map((s) => s._id);
+    const monthlyFeePayments = await FeePayment.find({
+      student: { $in: studentIds },
+      month: currentMonth,
+      year: currentYear,
+    });
+
+    const paidStudentSet = new Set(
+      monthlyFeePayments
+        .filter((fp) => fp.status === 'submitted')
+        .map((fp) => fp.student.toString())
+    );
+
     let feeReceived = 0;
     let feeRemaining = 0;
     students.forEach((s) => {
-      feeReceived += s.feesPaid || 0;
-      feeRemaining += (s.fees || 0) - (s.feesPaid || 0);
+      const studentFee = s.fees || 0;
+      if (paidStudentSet.has(s._id.toString())) {
+        feeReceived += studentFee;
+      } else {
+        feeRemaining += studentFee;
+      }
     });
 
     // 3. Calculate overall attendance percentage per student
@@ -204,6 +224,37 @@ router.get('/attendance', async (req, res) => {
   } catch (error) {
     console.error('Fetch attendance error:', error);
     res.status(500).json({ message: 'Server error fetching attendance.' });
+  }
+});
+
+/**
+ * DELETE /api/teacher/attendance
+ * Delete/reset all attendance records for a specific date
+ */
+router.delete('/attendance', async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ message: 'Date parameter is required (YYYY-MM-DD).' });
+    }
+
+    const teacherId = req.userId;
+    const targetDate = new Date(date + 'T00:00:00.000Z');
+
+    const result = await Attendance.deleteMany({
+      teacher: teacherId,
+      date: targetDate,
+    });
+
+    console.log(`Deleted ${result.deletedCount} attendance records for teacher ${teacherId} on ${date}`);
+
+    res.json({
+      message: `Attendance records for ${date} reset successfully.`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error('Delete attendance error:', error);
+    res.status(500).json({ message: 'Server error resetting attendance.' });
   }
 });
 

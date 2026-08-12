@@ -8,7 +8,6 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
     studentClass: '',
     assignedTeacher: '',
     fees: '',
-    feesPaid: '0',
     phone: '',
     password: '',
     enrollmentDate: new Date().toISOString().split('T')[0],
@@ -24,7 +23,6 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
         studentClass: student.studentClass || '',
         assignedTeacher: student.assignedTeacher?._id || student.assignedTeacher || '',
         fees: student.fees?.toString() || '',
-        feesPaid: student.feesPaid?.toString() || '0',
         phone: student.phone || '',
         password: '',
         enrollmentDate: student.enrollmentDate ? new Date(student.enrollmentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -55,7 +53,6 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
       formData.append('studentClass', form.studentClass.padStart(2, '0'));
       formData.append('assignedTeacher', form.assignedTeacher);
       formData.append('fees', form.fees);
-      formData.append('feesPaid', form.feesPaid || '0');
       formData.append('phone', form.phone);
       formData.append('enrollmentDate', form.enrollmentDate);
 
@@ -201,44 +198,24 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
             </div>
           </div>
 
-          {/* Fees and Fees Paid — side by side */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                Fees (PKR) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="fees"
-                value={form.fees}
-                onChange={handleChange}
-                required
-                min="0"
-                placeholder="e.g. 5000"
-                className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-              />
-              {form.fees && (
-                <p className="text-xs text-slate-400 mt-1">{formatPKR(form.fees)}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
-                Fees Paid (PKR)
-              </label>
-              <input
-                type="number"
-                name="feesPaid"
-                value={form.feesPaid}
-                onChange={handleChange}
-                min="0"
-                max={form.fees}
-                placeholder="e.g. 2000"
-                className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-              />
-              {form.feesPaid && (
-                <p className="text-xs text-slate-400 mt-1">{formatPKR(form.feesPaid)}</p>
-              )}
-            </div>
+          {/* Fees (PKR) */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+              Fees (PKR) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="fees"
+              value={form.fees}
+              onChange={handleChange}
+              required
+              min="0"
+              placeholder="e.g. 5000"
+              className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
+            />
+            {form.fees && (
+              <p className="text-xs text-slate-400 mt-1">{formatPKR(form.fees)}</p>
+            )}
           </div>
 
           {/* Phone and Password — side by side */}

@@ -204,21 +204,36 @@ export default function StudentDashboardPage() {
       {/* 2. Main Content Area */}
       <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1 min-w-0">
         {/* Hero Section */}
-        <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Welcome back, {student?.name || admin?.name || 'Student'} 👋
-            </h1>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold border border-slate-200 font-mono">
-                Reg No: {student?.rollNumber || 'N/A'}
-              </span>
-              <span className="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg text-xs font-semibold border border-amber-200">
-                Class: Class {student?.studentClass || 'N/A'}
-              </span>
-              <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold border border-slate-200">
-                Teacher: {student?.assignedTeacher?.name || 'Unassigned'}
-              </span>
+        <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Student Profile Picture */}
+            {student?.profilePicture ? (
+              <img
+                src={student.profilePicture}
+                alt={student.name || 'Student'}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-amber-200 shadow-sm shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-100 border-2 border-amber-200 flex items-center justify-center shadow-sm shrink-0">
+                <span className="text-xl sm:text-2xl font-bold text-amber-700">{initials}</span>
+              </div>
+            )}
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Welcome back, {student?.name || admin?.name || 'Student'} 👋
+              </h1>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold border border-slate-200 font-mono">
+                  Reg No: {student?.rollNumber || 'N/A'}
+                </span>
+                <span className="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg text-xs font-semibold border border-amber-200">
+                  Class: Class {student?.studentClass || 'N/A'}
+                </span>
+                <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold border border-slate-200">
+                  Teacher: {student?.assignedTeacher?.name || 'Unassigned'}
+                </span>
+              </div>
             </div>
           </div>
 

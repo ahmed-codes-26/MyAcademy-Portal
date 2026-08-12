@@ -1,6 +1,6 @@
 import { Pencil, Trash2 } from 'lucide-react';
 
-export default function UserTable({ columns, data, onEdit, onDelete, loading }) {
+export default function UserTable({ columns, data, onEdit, onDelete, loading, currentPage = 1, itemsPerPage = 10 }) {
   if (loading) {
     return (
       <div className="overflow-x-auto max-w-full w-full">
@@ -72,19 +72,25 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading }) 
           </tr>
         </thead>
         <tbody>
-          {data.map((row) => (
-            <tr
-              key={row._id}
-              className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
-            >
-              {columns.map((col) => (
-                <td
-                  key={col.key}
-                  className="px-5 py-4 text-sm text-slate-700 whitespace-nowrap"
-                >
-                  {col.render ? col.render(row) : row[col.key]}
-                </td>
-              ))}
+          {data.map((row, index) => {
+            const serialNumber = (currentPage - 1) * itemsPerPage + index + 1;
+            return (
+              <tr
+                key={row._id}
+                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+              >
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className="px-5 py-4 text-sm text-slate-700 whitespace-nowrap"
+                  >
+                    {col.render
+                      ? col.render(row, index, serialNumber)
+                      : col.key === '#' || col.key === 'srNo'
+                      ? serialNumber
+                      : row[col.key]}
+                  </td>
+                ))}
               <td className="px-5 py-4">
                 <div className="flex items-center justify-end gap-1.5">
                   <button
@@ -104,7 +110,8 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading }) 
                 </div>
               </td>
             </tr>
-          ))}
+          );
+        })}
         </tbody>
       </table>
     </div>

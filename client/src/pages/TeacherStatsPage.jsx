@@ -324,6 +324,7 @@ export default function TeacherStatsPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                      <th className="px-6 py-4 w-12 text-center">#</th>
                       <th className="px-6 py-4">Student Name</th>
                       <th className="px-6 py-4">Registration No.</th>
                       <th className="px-6 py-4">Attendance %</th>
@@ -333,7 +334,7 @@ export default function TeacherStatsPage() {
                   <tbody className="divide-y divide-slate-100 text-sm">
                     {loadingClass ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-12">
+                        <td colSpan={5} className="px-6 py-12">
                           <div className="flex items-center justify-center gap-2 text-slate-400">
                             <Loader2 className="w-5 h-5 animate-spin" />
                             <span>Loading class stats...</span>
@@ -342,17 +343,20 @@ export default function TeacherStatsPage() {
                       </tr>
                     ) : classOverview.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-slate-400 font-medium">
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
                           No students enrolled prior to or during {MONTHS[classMonth]} {classYear}.
                         </td>
                       </tr>
                     ) : (
-                      classOverview.map((student) => {
+                      classOverview.map((student, index) => {
                         const isPaid = student.feeStatus === 'submitted';
                         const attPct = student.attendancePercentage;
 
                         return (
                           <tr key={student._id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 text-center font-mono text-xs text-slate-400 font-bold">
+                              {index + 1}
+                            </td>
                             <td className="px-6 py-4 font-semibold text-slate-800">
                               {student.name}
                             </td>
