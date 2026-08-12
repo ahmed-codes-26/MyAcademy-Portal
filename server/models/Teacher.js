@@ -29,6 +29,10 @@ const teacherSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: 6,
     },
+    profilePicture: {
+      type: String,
+      default: '',
+    },
   },
   { timestamps: true }
 );

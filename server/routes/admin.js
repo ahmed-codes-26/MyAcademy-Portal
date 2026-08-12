@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
-const cloudinary = require('../config/cloudinary');
+const { uploadStreamToCloudinary } = require('../config/cloudinary');
 const auth = require('../middleware/auth');
 const Admin = require('../models/Admin');
 const PasswordRequest = require('../models/PasswordRequest');
@@ -84,19 +84,10 @@ router.post('/profile/picture', auth, upload.single('profilePicture'), async (re
       return res.status(400).json({ message: 'No image file provided.' });
     }
 
-    // Upload to Cloudinary from buffer
-    const result = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: 'myacademy/profiles',
-          transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      uploadStream.end(req.file.buffer);
+    // Upload to Cloudinary from memory buffer
+    const result = await uploadStreamToCloudinary(req.file.buffer, {
+      folder: 'myacademy/profiles',
+      transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
     });
 
     const admin = await Admin.findById(req.adminId);

@@ -17,9 +17,9 @@ const upload = multer({
 /**
  * GET /api/notes/:id/download
  * Generate a time-limited signed download link for restricted files and redirect.
- * Placed before auth middleware to allow direct browser navigation/download triggers.
+ * Enforces JWT authentication to ensure only authorized users can download notes.
  */
-router.get('/:id/download', async (req, res) => {
+router.get('/:id/download', auth, async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
     if (!note) {

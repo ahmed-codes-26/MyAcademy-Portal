@@ -46,6 +46,37 @@ export default function StudentDashboardPage() {
   // Dashboard Data State
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const handleDownloadNote = async (note) => {
+    setDownloadingId(note._id);
+    try {
+      const res = await api.get(`/notes/${note._id}/download`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], {
+        type: res.headers['content-type'] || 'application/octet-stream',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const ext = (note.fileType || 'pdf').toLowerCase();
+      const rawName = note.displayName || `note_${note._id}`;
+      const fileName = rawName.toLowerCase().endsWith(`.${ext}`)
+        ? rawName
+        : `${rawName}.${ext}`;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Download note error:', err);
+      toast.error('Failed to download study note.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const fetchStudentDashboard = useCallback(async () => {
     setLoading(true);
@@ -432,15 +463,19 @@ export default function StudentDashboardPage() {
                       </div>
                     </div>
 
-                    <a
-                      href={`/api/notes/${note._id}/download`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-colors shrink-0"
+                    <button
+                      type="button"
+                      disabled={downloadingId === note._id}
+                      onClick={() => handleDownloadNote(note)}
+                      className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-colors shrink-0 disabled:opacity-50"
                       title="Download Note"
                     >
-                      <Download className="w-4 h-4" />
-                    </a>
+                      {downloadingId === note._id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
                 ))}
               </div>

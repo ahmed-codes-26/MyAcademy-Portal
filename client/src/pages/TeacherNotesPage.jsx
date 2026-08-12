@@ -13,6 +13,7 @@ export default function TeacherNotesPage() {
   const { admin } = useAuth();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null);
   
   // Upload Form State
   const [file, setFile] = useState(null);
@@ -25,6 +26,36 @@ export default function TeacherNotesPage() {
 
   const fileInputRef = useRef(null);
   const toast = useToast();
+
+  const handleDownloadNote = async (note) => {
+    setDownloadingId(note._id);
+    try {
+      const res = await api.get(`/notes/${note._id}/download`, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], {
+        type: res.headers['content-type'] || 'application/octet-stream',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const ext = (note.fileType || 'pdf').toLowerCase();
+      const rawName = note.displayName || `note_${note._id}`;
+      const fileName = rawName.toLowerCase().endsWith(`.${ext}`)
+        ? rawName
+        : `${rawName}.${ext}`;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Download note error:', err);
+      toast.error('Failed to download study note.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const handleDeleteNote = async (noteId) => {
     if (!window.confirm('Are you sure you want to delete this study note? This will permanently remove the file from storage.')) {
@@ -422,16 +453,20 @@ export default function TeacherNotesPage() {
 
                              {/* Actions Container */}
                              <div className="flex items-center gap-1 shrink-0">
-                               {/* Download Action Trigger */}
-                               <a
-                                 href={`/api/notes/${note._id}/download`}
-                                 target="_blank"
-                                 rel="noopener noreferrer"
-                                 className="text-slate-400 hover:text-amber-500 p-2 rounded-full hover:bg-slate-50 transition-colors"
-                                 title="Download note"
-                               >
-                                 <Download className="w-4 h-4" />
-                               </a>
+                                {/* Download Action Trigger */}
+                                <button
+                                  type="button"
+                                  disabled={downloadingId === note._id}
+                                  onClick={() => handleDownloadNote(note)}
+                                  className="text-slate-400 hover:text-amber-500 p-2 rounded-full hover:bg-slate-50 transition-colors disabled:opacity-50"
+                                  title="Download note"
+                                >
+                                  {downloadingId === note._id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                                  ) : (
+                                    <Download className="w-4 h-4" />
+                                  )}
+                                </button>
 
                                {/* Conditional Delete Trigger */}
                                {admin && note.uploadedBy && (note.uploadedBy._id === admin._id || note.uploadedBy === admin._id) && (

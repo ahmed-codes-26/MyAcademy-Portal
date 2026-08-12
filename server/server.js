@@ -41,7 +41,7 @@ app.use('/api/student', studentPortalRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', message: 'Your API is running', timestamp: new Date().toISOString() });
 });
 
 // Serve frontend in production

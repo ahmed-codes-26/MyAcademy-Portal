@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
-const { cloudinary } = require('../config/cloudinary');
+const { uploadStreamToCloudinary } = require('../config/cloudinary');
 const auth = require('../middleware/auth');
 const Student = require('../models/Student');
 const Counter = require('../models/Counter');
@@ -90,12 +90,15 @@ router.post(
 
       let profilePictureUrl = '';
       if (req.file) {
-        const b64 = Buffer.from(req.file.buffer).toString('base64');
-        const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-        const result = await cloudinary.uploader.upload(dataURI, {
-          folder: 'myacademy_students',
-        });
-        profilePictureUrl = result.secure_url;
+        try {
+          const result = await uploadStreamToCloudinary(req.file.buffer, {
+            folder: 'myacademy_students',
+          });
+          profilePictureUrl = result.secure_url;
+        } catch (uploadError) {
+          console.error('Cloudinary student image upload failed:', uploadError);
+          return res.status(500).json({ message: 'Failed to upload profile picture to cloud storage.' });
+        }
       }
 
       const student = await Student.create({
@@ -163,12 +166,15 @@ router.put(
       if (password) student.password = password;
 
       if (req.file) {
-        const b64 = Buffer.from(req.file.buffer).toString('base64');
-        const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-        const result = await cloudinary.uploader.upload(dataURI, {
-          folder: 'myacademy_students',
-        });
-        student.profilePicture = result.secure_url;
+        try {
+          const result = await uploadStreamToCloudinary(req.file.buffer, {
+            folder: 'myacademy_students',
+          });
+          student.profilePicture = result.secure_url;
+        } catch (uploadError) {
+          console.error('Cloudinary student image update failed:', uploadError);
+          return res.status(500).json({ message: 'Failed to upload updated profile picture.' });
+        }
       }
 
       await student.save();
