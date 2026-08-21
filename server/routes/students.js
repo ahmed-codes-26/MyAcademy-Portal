@@ -83,7 +83,7 @@ router.post(
         return res.status(400).json({ message: errors.array()[0].msg });
       }
 
-      const { name, studentClass, assignedTeacher, fees, feesPaid, phone, password } = req.body;
+      const { name, studentClass, assignedTeacher, fees, feesPaid, phone, password, enrollmentDate } = req.body;
 
       // Auto-generate roll number
       const rollNumber = await generateRollNumber(studentClass);
@@ -101,7 +101,7 @@ router.post(
         }
       }
 
-      const student = await Student.create({
+      const studentData = {
         rollNumber,
         name,
         studentClass,
@@ -111,7 +111,14 @@ router.post(
         phone,
         password,
         profilePicture: profilePictureUrl,
-      });
+      };
+
+      // Only set enrollmentDate if explicitly provided, otherwise let schema default apply
+      if (enrollmentDate) {
+        studentData.enrollmentDate = new Date(enrollmentDate);
+      }
+
+      const student = await Student.create(studentData);
 
       // Populate teacher info before returning
       await student.populate('assignedTeacher', 'name batchName');
@@ -155,7 +162,7 @@ router.put(
         return res.status(404).json({ message: 'Student not found.' });
       }
 
-      const { name, studentClass, assignedTeacher, fees, feesPaid, phone, password } = req.body;
+      const { name, studentClass, assignedTeacher, fees, feesPaid, phone, password, enrollmentDate } = req.body;
 
       if (name) student.name = name;
       if (studentClass) student.studentClass = studentClass;
@@ -164,6 +171,7 @@ router.put(
       if (feesPaid !== undefined) student.feesPaid = Number(feesPaid);
       if (phone) student.phone = phone;
       if (password) student.password = password;
+      if (enrollmentDate) student.enrollmentDate = new Date(enrollmentDate);
 
       if (req.file) {
         try {

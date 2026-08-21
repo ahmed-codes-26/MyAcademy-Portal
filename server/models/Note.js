@@ -16,6 +16,10 @@ const noteSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Subject is required'],
       trim: true,
+      enum: {
+        values: ['English', 'Urdu', 'Math', 'Islamiyat', 'Pakistan Studies', 'Chemistry', 'Physics', 'History', 'Geography', 'G Science'],
+        message: '{VALUE} is not a valid subject',
+      },
     },
     uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,

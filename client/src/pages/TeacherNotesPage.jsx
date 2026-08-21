@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Upload, FileText, FileSpreadsheet, Presentation, File, Download, Loader2, HelpCircle, AlertCircle, Trash2 } from 'lucide-react';
 
 const CLASS_OPTIONS = ['9th', '10th', '11th', '12th'];
-const SUBJECT_OPTIONS = ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'English'];
+const SUBJECT_OPTIONS = ['English', 'Urdu', 'Math', 'Islamiyat', 'Pakistan Studies', 'Chemistry', 'Physics', 'History', 'Geography', 'G Science'];
 
 export default function TeacherNotesPage() {
   const { admin } = useAuth();

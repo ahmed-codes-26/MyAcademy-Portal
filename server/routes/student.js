@@ -99,22 +99,25 @@ router.get('/dashboard', async (req, res) => {
       };
     });
 
-    // 4. Recent Study Notes for student's class
+    // 4. Recent Study Notes — strict class-level filtering
     const rawClass = (student.studentClass || '').trim();
     const classDigits = rawClass.replace(/\D/g, '');
-    const classPattern = classDigits ? classDigits : rawClass;
 
-    let recentNotes = [];
-    if (classPattern) {
-      recentNotes = await Note.find({ class: new RegExp(classPattern, 'i') })
-        .populate('uploadedBy', 'name')
-        .sort({ createdAt: -1 })
-        .limit(6);
+    // Build an array of possible class representations to match against
+    // e.g. studentClass "9" or "09" should match notes tagged "9", "09", "9th"
+    const classVariants = [];
+    if (classDigits) {
+      classVariants.push(classDigits);                             // "9" or "09"
+      classVariants.push(String(parseInt(classDigits, 10)));       // normalized without leading zero
+      classVariants.push(`${parseInt(classDigits, 10)}th`);        // "9th"
+    }
+    if (rawClass && !classVariants.includes(rawClass)) {
+      classVariants.push(rawClass);
     }
 
-    // Fallback if no notes match class specifically
-    if (!recentNotes || recentNotes.length === 0) {
-      recentNotes = await Note.find({})
+    let recentNotes = [];
+    if (classVariants.length > 0) {
+      recentNotes = await Note.find({ class: { $in: classVariants } })
         .populate('uploadedBy', 'name')
         .sort({ createdAt: -1 })
         .limit(6);
