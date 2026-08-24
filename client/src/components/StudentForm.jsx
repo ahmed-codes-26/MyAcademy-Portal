@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Camera, User } from 'lucide-react';
+import { X, Camera, User, Eye, EyeOff } from 'lucide-react';
 
 export default function StudentForm({ student, teachers, onSubmit, onClose }) {
   const isEditing = !!student;
@@ -12,6 +12,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
     password: '',
     enrollmentDate: new Date().toISOString().split('T')[0],
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -238,16 +239,26 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
                 Password {isEditing ? <span className="text-slate-400 font-normal normal-case">(leave blank)</span> : <span className="text-red-500">*</span>}
               </label>
-              <input
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                required={!isEditing}
-                minLength={6}
-                placeholder={isEditing ? "Keep current" : "Enter password"}
-                className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required={!isEditing}
+                  minLength={6}
+                  placeholder={isEditing ? "Keep current" : "Enter password"}
+                  className="w-full pl-3 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
 

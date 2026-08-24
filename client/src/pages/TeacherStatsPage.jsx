@@ -4,7 +4,7 @@ import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
 import { useToast } from '../components/Toast';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Search, CheckCircle2, XCircle, ShieldAlert, Loader2, HelpCircle } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, ShieldAlert, Loader2, HelpCircle, Eye, EyeOff } from 'lucide-react';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -16,6 +16,9 @@ const YEARS = [2025, 2026, 2027, 2028];
 export default function TeacherStatsPage() {
   const currentDate = new Date();
   
+  // Privacy toggle state
+  const [isDataVisible, setIsDataVisible] = useState(false);
+
   // Single Student Stats State
   const [studentList, setStudentList] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState('');
@@ -115,9 +118,20 @@ export default function TeacherStatsPage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Attendance & Fee Stats</h2>
-          <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
-            <HelpCircle className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsDataVisible(!isDataVisible)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
+              title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
+            >
+              {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
+              <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
+            </button>
+            <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
+              <HelpCircle className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
         {/* Content Canvas */}
@@ -125,8 +139,17 @@ export default function TeacherStatsPage() {
           
           {/* Section 1: Single Student Overview (Bento Grid) */}
           <section className="space-y-4">
-            <div className="border-b border-slate-200 pb-3">
+            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Single Student Profile Bento</h2>
+              <button
+                type="button"
+                onClick={() => setIsDataVisible(!isDataVisible)}
+                className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-sm"
+                title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
+              >
+                {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
+                <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
+              </button>
             </div>
 
             {/* Selector Filters Row */}
@@ -159,7 +182,7 @@ export default function TeacherStatsPage() {
                     ) : (
                       filteredSearchStudents.map((s) => (
                         <option key={s._id} value={s._id}>
-                          {s.name} ({s.rollNumber})
+                          {s.name} ({isDataVisible ? s.rollNumber : '******'})
                         </option>
                       ))
                     )}
@@ -361,7 +384,7 @@ export default function TeacherStatsPage() {
                               {student.name}
                             </td>
                             <td className="px-6 py-4 text-slate-500 font-mono">
-                              {student.rollNumber}
+                              {isDataVisible ? student.rollNumber : '******'}
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">

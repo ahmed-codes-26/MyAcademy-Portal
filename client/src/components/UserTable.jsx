@@ -1,6 +1,30 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 
 export default function UserTable({ columns, data, onEdit, onDelete, loading, currentPage = 1, itemsPerPage = 10 }) {
+  const [isDataVisible, setIsDataVisible] = useState(false);
+
+  const renderCellContent = (col, row, index, serialNumber) => {
+    if (!isDataVisible) {
+      const key = col.key?.toLowerCase() || '';
+      const label = col.label?.toLowerCase() || '';
+      if (key === 'fees' || label.includes('fee')) {
+        return 'PKR ****';
+      }
+      if (key === 'phone' || label.includes('phone')) {
+        return '******';
+      }
+      if (key === 'rollnumber' || label.includes('roll')) {
+        return '******';
+      }
+    }
+    return col.render
+      ? col.render(row, index, serialNumber)
+      : col.key === '#' || col.key === 'srNo'
+      ? serialNumber
+      : row[col.key];
+  };
+
   if (loading) {
     return (
       <div className="overflow-x-auto max-w-full w-full">
@@ -54,66 +78,78 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading, cu
   }
 
   return (
-    <div className="overflow-x-auto max-w-full w-full">
-      <table className="w-full text-left">
-        <thead>
-          <tr className="bg-slate-50 border-b border-slate-200">
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500"
-              >
-                {col.label}
+    <div className="w-full">
+      {/* Privacy Toggle Bar */}
+      <div className="flex items-center justify-end px-4 py-2.5 bg-slate-50/80 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={() => setIsDataVisible(!isDataVisible)}
+          className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-xs font-semibold shadow-sm transition-colors"
+          title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
+        >
+          {isDataVisible ? <EyeOff className="w-3.5 h-3.5 text-slate-500" /> : <Eye className="w-3.5 h-3.5 text-slate-500" />}
+          <span>{isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}</span>
+        </button>
+      </div>
+
+      <div className="overflow-x-auto max-w-full w-full">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  {col.label}
+                </th>
+              ))}
+              <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">
+                Actions
               </th>
-            ))}
-            <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, index) => {
-            const serialNumber = (currentPage - 1) * itemsPerPage + index + 1;
-            return (
-              <tr
-                key={row._id}
-                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
-              >
-                {columns.map((col) => (
-                  <td
-                    key={col.key}
-                    className="px-5 py-4 text-sm text-slate-700 whitespace-nowrap"
-                  >
-                    {col.render
-                      ? col.render(row, index, serialNumber)
-                      : col.key === '#' || col.key === 'srNo'
-                      ? serialNumber
-                      : row[col.key]}
-                  </td>
-                ))}
-              <td className="px-5 py-4">
-                <div className="flex items-center justify-end gap-1.5">
-                  <button
-                    onClick={() => onEdit(row)}
-                    className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(row)}
-                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
             </tr>
-          );
-        })}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((row, index) => {
+              const serialNumber = (currentPage - 1) * itemsPerPage + index + 1;
+              return (
+                <tr
+                  key={row._id}
+                  className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+                >
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className="px-5 py-4 text-sm text-slate-700 whitespace-nowrap"
+                    >
+                      {renderCellContent(col, row, index, serialNumber)}
+                    </td>
+                  ))}
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => onEdit(row)}
+                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(row)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
+

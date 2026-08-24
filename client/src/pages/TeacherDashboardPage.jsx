@@ -4,7 +4,7 @@ import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
-import { Users, Clock, TrendingUp, HelpCircle } from 'lucide-react';
+import { Users, Clock, TrendingUp, HelpCircle, Eye, EyeOff } from 'lucide-react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -21,6 +21,7 @@ import {
 export default function TeacherDashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isDataVisible, setIsDataVisible] = useState(false);
   const { admin } = useAuth();
   const toast = useToast();
 
@@ -95,6 +96,15 @@ export default function TeacherDashboardPage() {
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Teacher Dashboard</h2>
           <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setIsDataVisible(!isDataVisible)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
+              title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
+            >
+              {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
+              <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
+            </button>
             <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
               <HelpCircle className="w-5 h-5" />
             </button>
@@ -109,12 +119,27 @@ export default function TeacherDashboardPage() {
 
         {/* Content Canvas */}
         <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
+          {/* Mobile privacy toggle banner */}
+          <div className="lg:hidden flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsDataVisible(!isDataVisible)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-sm"
+              title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
+            >
+              {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
+              <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
+            </button>
+          </div>
+
           {/* Summary Metrics */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Fee Received */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Fee Received</span>
-              <span className="text-2xl font-bold text-slate-900">PKR {metrics.feeReceived.toLocaleString('en-PK')}</span>
+              <span className="text-2xl font-bold text-slate-900">
+                {isDataVisible ? `PKR ${metrics.feeReceived.toLocaleString('en-PK')}` : 'PKR ****'}
+              </span>
               <div className="flex items-center gap-1 text-emerald-600 mt-3 text-xs font-semibold">
                 <TrendingUp className="w-4 h-4" />
                 <span>Collected directly</span>
@@ -124,7 +149,9 @@ export default function TeacherDashboardPage() {
             {/* Fee Remaining */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Fee Remaining</span>
-              <span className="text-2xl font-bold text-slate-900">PKR {metrics.feeRemaining.toLocaleString('en-PK')}</span>
+              <span className="text-2xl font-bold text-slate-900">
+                {isDataVisible ? `PKR ${metrics.feeRemaining.toLocaleString('en-PK')}` : 'PKR ****'}
+              </span>
               <div className="flex items-center gap-1 text-amber-600 mt-3 text-xs font-semibold">
                 <Clock className="w-4 h-4" />
                 <span>Pending collection</span>
@@ -251,7 +278,9 @@ export default function TeacherDashboardPage() {
                       <tr key={student._id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-4 text-center font-mono text-xs text-slate-400 font-bold">{index + 1}</td>
                         <td className="px-6 py-4 font-semibold text-slate-900 whitespace-nowrap">{student.name}</td>
-                        <td className="px-6 py-4 text-slate-500 font-mono whitespace-nowrap">{student.rollNumber}</td>
+                        <td className="px-6 py-4 text-slate-500 font-mono whitespace-nowrap">
+                          {isDataVisible ? student.rollNumber : '******'}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${getBadgeClass(student.attendancePercentage)}`}>
                             {student.attendancePercentage}%

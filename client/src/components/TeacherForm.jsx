@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 
 export default function TeacherForm({ teacher, onSubmit, onClose }) {
   const isEditing = !!teacher;
@@ -10,6 +10,7 @@ export default function TeacherForm({ teacher, onSubmit, onClose }) {
     batchName: '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -134,16 +135,26 @@ export default function TeacherForm({ teacher, onSubmit, onClose }) {
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
               Password {isEditing ? <span className="text-slate-400 font-normal normal-case">(leave blank to keep current)</span> : <span className="text-red-500">*</span>}
             </label>
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              required={!isEditing}
-              minLength={6}
-              placeholder={isEditing ? "Enter new password to change" : "Enter password (min 6 characters)"}
-              className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                required={!isEditing}
+                minLength={6}
+                placeholder={isEditing ? "Enter new password to change" : "Enter password (min 6 characters)"}
+                className="w-full pl-3 pr-10 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded transition-colors"
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {/* Actions */}
