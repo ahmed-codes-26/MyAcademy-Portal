@@ -17,6 +17,7 @@ import {
   FileSpreadsheet,
   Presentation,
   GraduationCap,
+  Flame,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -122,7 +123,8 @@ export default function StudentDashboardPage() {
     );
   }
 
-  const { student, attendance, fee, attendanceTrends = [], recentNotes = [], notices = [] } = dashboardData || {};
+  const { student, attendance, fee, attendanceTrends = [], recentNotes = [] } = dashboardData || {};
+  const streak = attendance?.streak || 0;
 
   const initials = student?.name
     ?.split(' ')
@@ -233,6 +235,12 @@ export default function StudentDashboardPage() {
                 <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold border border-slate-200">
                   Teacher: {student?.assignedTeacher?.name || 'Unassigned'}
                 </span>
+                <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-orange-500/30 px-3 py-1 rounded-lg text-xs font-bold text-orange-700 shadow-2xs">
+                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  {streak > 0
+                    ? `🔥 ${streak}-Day Streak!`
+                    : "🔥 0 Days — Show up tomorrow to start your streak!"}
+                </span>
               </div>
             </div>
           </div>
@@ -338,6 +346,23 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
             </div>
+
+            {/* Attendance Streak Banner */}
+            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-gradient-to-br from-amber-100 via-orange-100 to-red-100 text-orange-600 rounded-lg border border-orange-200/80 shrink-0">
+                  <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Attendance Streak</p>
+                  <p className="text-xs font-extrabold text-slate-800">
+                    {streak > 0
+                      ? `🔥 ${streak}-Day Streak!`
+                      : "🔥 0 Days — Show up tomorrow to start your streak!"}
+                  </p>
+                </div>
+              </div>
+            </div>
           </article>
 
           {/* Card 2: Fee Status & History (Bento Cell: 4 cols) */}
@@ -370,21 +395,28 @@ export default function StudentDashboardPage() {
             </div>
           </article>
 
-          {/* Card 5: Academy Notice Board (Bento Cell: 4 cols, row-span-2) */}
+          {/* Card 5: News & Announcements Section (Bento Cell: 4 cols, row-span-2) */}
           <article className="col-span-1 md:col-span-4 md:row-span-2 bg-white border border-slate-200 shadow-sm rounded-2xl flex flex-col hover:border-amber-300 transition-colors overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-amber-500" />
-              <h2 className="text-base font-bold text-slate-900">Notice Board</h2>
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-amber-500" />
+                <h2 className="text-base font-bold text-slate-900">News & Announcements</h2>
+              </div>
+              <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs px-2.5 py-0.5 rounded-full font-medium shrink-0">
+                Coming Soon
+              </span>
             </div>
 
-            <div className="flex-1 p-5 overflow-y-auto space-y-4 max-h-[360px]">
-              {notices.map((notice) => (
-                <div key={notice.id} className="pb-3 border-b border-slate-100 border-dashed last:border-0 last:pb-0">
-                  <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">{notice.date}</span>
-                  <h3 className="text-xs font-bold text-slate-900 mt-0.5">{notice.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{notice.description}</p>
-                </div>
-              ))}
+            <div className="flex-1 p-6 flex flex-col items-center justify-center text-center my-auto min-h-[220px]">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 shadow-xs">
+                <Megaphone className="w-8 h-8 text-amber-500/60" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 mb-1.5">
+                Portal Announcements Coming Soon
+              </h3>
+              <p className="text-xs text-slate-500 max-w-[240px] leading-relaxed">
+                Stay tuned for batch schedules, important updates, and academy announcements right here.
+              </p>
             </div>
           </article>
 

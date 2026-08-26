@@ -44,7 +44,7 @@ router.get('/dashboard', async (req, res) => {
       attendanceFilter.date = { $gte: startOfMonth, $lte: endOfMonth };
     }
 
-    // 1. Attendance Summary Metrics
+    // 1. Attendance Summary Metrics & Streak Calculation
     const attendanceRecords = await Attendance.find(attendanceFilter).sort({ date: 1 });
     let presents = 0;
     let absents = 0;
@@ -59,6 +59,18 @@ router.get('/dashboard', async (req, res) => {
 
     const totalDays = attendanceRecords.length;
     const attendancePercentage = totalDays > 0 ? Math.round((presents / totalDays) * 100) : 100;
+
+    // Calculate consecutive presence streak (most recent first)
+    const allRecordsForStreak = await Attendance.find({ student: studentId }).sort({ date: -1 });
+    let streak = 0;
+    for (const rec of allRecordsForStreak) {
+      const statusLower = (rec.status || '').toLowerCase();
+      if (statusLower === 'present') {
+        streak++;
+      } else if (statusLower === 'absent') {
+        break;
+      }
+    }
 
     // 2. Fee Status & Payment History
     // Check FeePayment collection for specific month record, or fall back to student model
@@ -168,6 +180,7 @@ router.get('/dashboard', async (req, res) => {
         leaves,
         totalDays,
         percentage: attendancePercentage,
+        streak,
       },
       fee: {
         amount: feeAmount,

@@ -1,5 +1,5 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
-const { DisconnectReason } = require('@whiskeysockets/baileys');
+const { DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const QRCode = require('qrcode');
 const { useMongoDBAuthState } = require('./whatsappAuthHelper');
@@ -10,6 +10,8 @@ const activeSockets = {};
 const sessionStatuses = {}; // 'disconnected' | 'connecting' | 'connected'
 const qrCodes = {};
 const connectedPhones = {};
+const reconnectTimers = {};
+const isInitializing = {};
 
 // Create a Pino logger locked to 'error' level to avoid terminal flooding
 const baileysLogger = pino({ level: 'error' });
@@ -20,25 +22,55 @@ const baileysLogger = pino({ level: 'error' });
 const initWhatsAppSession = async (teacherId) => {
   const teacherIdStr = teacherId.toString();
 
-  // If already connecting or connected, don't re-initialize
-  if (activeSockets[teacherIdStr] && sessionStatuses[teacherIdStr] !== 'disconnected') {
+  // Prevent duplicate concurrent initialization calls for the same teacher
+  if (isInitializing[teacherIdStr]) {
+    return activeSockets[teacherIdStr] || null;
+  }
+
+  // If already connected, return active socket
+  if (activeSockets[teacherIdStr] && sessionStatuses[teacherIdStr] === 'connected') {
     return activeSockets[teacherIdStr];
   }
 
+  // Clear any existing reconnect timer
+  if (reconnectTimers[teacherIdStr]) {
+    clearTimeout(reconnectTimers[teacherIdStr]);
+    delete reconnectTimers[teacherIdStr];
+  }
+
+  isInitializing[teacherIdStr] = true;
   sessionStatuses[teacherIdStr] = 'connecting';
-  qrCodes[teacherIdStr] = null;
 
   try {
+    // If an existing socket reference exists, clean up listeners safely
+    if (activeSockets[teacherIdStr]) {
+      try {
+        activeSockets[teacherIdStr].ev.removeAllListeners();
+        activeSockets[teacherIdStr].end(undefined);
+      } catch (e) {
+        // Ignore socket end errors on stale refs
+      }
+      delete activeSockets[teacherIdStr];
+    }
+
     const { state, saveCreds } = await useMongoDBAuthState(teacherIdStr);
 
     const sock = makeWASocket({
       logger: baileysLogger,
       auth: state,
-      printQRInTerminal: false, // Ensure we DO NOT print QR in terminal
+      printQRInTerminal: false,
+      browser: Browsers.ubuntu('Chrome'), // Stable browser signature
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
+      keepAliveIntervalMs: 30000,
+      connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: undefined,
     });
 
     activeSockets[teacherIdStr] = sock;
+
+    // Bind credentials update event
+    sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
@@ -46,7 +78,7 @@ const initWhatsAppSession = async (teacherId) => {
       if (qr) {
         try {
           qrCodes[teacherIdStr] = await QRCode.toDataURL(qr);
-          sessionStatuses[teacherIdStr] = 'disconnected'; // Ready to scan
+          sessionStatuses[teacherIdStr] = 'disconnected'; // Ready for QR scan
         } catch (err) {
           console.error(`Error generating QR code for teacher ${teacherIdStr}:`, err);
         }
@@ -59,9 +91,8 @@ const initWhatsAppSession = async (teacherId) => {
       if (connection === 'open') {
         sessionStatuses[teacherIdStr] = 'connected';
         qrCodes[teacherIdStr] = null;
-        
-        // Save the linked phone details
-        const jid = sock.user.id;
+
+        const jid = sock.user?.id || '';
         const rawPhone = jid.split(':')[0] || jid.split('@')[0];
         connectedPhones[teacherIdStr] = rawPhone;
         console.log(`WhatsApp session opened successfully for teacher ${teacherIdStr} (${rawPhone})`);
@@ -70,35 +101,52 @@ const initWhatsAppSession = async (teacherId) => {
       if (connection === 'close') {
         const error = lastDisconnect?.error;
         const statusCode = error?.output?.statusCode || error?.output?.payload?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
-        console.log(`WhatsApp session closed for teacher ${teacherIdStr}. Reason: ${statusCode}. Reconnecting: ${shouldReconnect}`);
+        console.log(`WhatsApp connection closed for teacher ${teacherIdStr}. Status code: ${statusCode}`);
 
-        // Cleanup current socket ref
-        delete activeSockets[teacherIdStr];
-        qrCodes[teacherIdStr] = null;
+        if (activeSockets[teacherIdStr] === sock) {
+          delete activeSockets[teacherIdStr];
+        }
 
-        if (shouldReconnect) {
-          // Attempt reconnection
-          setTimeout(() => {
-            initWhatsAppSession(teacherIdStr).catch(console.error);
-          }, 3000);
-        } else {
-          // Logged out: clean up database credentials completely
+        const isLoggedOut =
+          statusCode === DisconnectReason.loggedOut ||
+          statusCode === 401 ||
+          statusCode === 403;
+
+        if (isLoggedOut) {
+          console.error(`WhatsApp session logged out for teacher ${teacherIdStr} (code ${statusCode}). Wiping MongoDB session keys...`);
           sessionStatuses[teacherIdStr] = 'disconnected';
+          qrCodes[teacherIdStr] = null;
           delete connectedPhones[teacherIdStr];
-          await WhatsAppSession.deleteOne({ teacherId: teacherIdStr });
+
+          try {
+            await WhatsAppSession.deleteOne({ teacherId: teacherIdStr });
+            console.log(`Cleaned up logged out MongoDB session for teacher ${teacherIdStr}`);
+          } catch (dbErr) {
+            console.error(`Failed to delete session record for teacher ${teacherIdStr}:`, dbErr.message);
+          }
+        } else {
+          // Automatic reconnection for transient disconnects (428, 408, 515, etc.)
+          console.log(`Reconnecting WhatsApp session for teacher ${teacherIdStr} in 3 seconds...`);
+          sessionStatuses[teacherIdStr] = 'connecting';
+
+          reconnectTimers[teacherIdStr] = setTimeout(() => {
+            delete reconnectTimers[teacherIdStr];
+            initWhatsAppSession(teacherIdStr).catch((err) => {
+              console.error(`Reconnection failed for teacher ${teacherIdStr}:`, err.message);
+            });
+          }, 3000);
         }
       }
     });
-
-    sock.ev.on('creds.update', saveCreds);
 
     return sock;
   } catch (error) {
     console.error(`Failed to initialize WhatsApp session for teacher ${teacherIdStr}:`, error);
     sessionStatuses[teacherIdStr] = 'disconnected';
     throw error;
+  } finally {
+    isInitializing[teacherIdStr] = false;
   }
 };
 
@@ -107,9 +155,14 @@ const initWhatsAppSession = async (teacherId) => {
  */
 const getSessionStatus = (teacherId) => {
   const teacherIdStr = teacherId.toString();
-  
+
   // Lazy initialization: if session does not exist in memory, spin it up in the background
-  if (!activeSockets[teacherIdStr] && sessionStatuses[teacherIdStr] !== 'connecting') {
+  if (
+    !activeSockets[teacherIdStr] &&
+    sessionStatuses[teacherIdStr] !== 'connecting' &&
+    !isInitializing[teacherIdStr] &&
+    !reconnectTimers[teacherIdStr]
+  ) {
     initWhatsAppSession(teacherIdStr).catch((err) => {
       console.error(`Lazy init failed for teacher ${teacherIdStr}:`, err.message);
     });
@@ -127,16 +180,22 @@ const getSessionStatus = (teacherId) => {
  */
 const disconnectSession = async (teacherId) => {
   const teacherIdStr = teacherId.toString();
-  const sock = activeSockets[teacherIdStr];
 
+  if (reconnectTimers[teacherIdStr]) {
+    clearTimeout(reconnectTimers[teacherIdStr]);
+    delete reconnectTimers[teacherIdStr];
+  }
+
+  const sock = activeSockets[teacherIdStr];
   if (sock) {
     try {
+      sock.ev.removeAllListeners();
       await sock.logout();
-      sock.end();
+      sock.end(undefined);
     } catch (err) {
       console.warn(`Error logging out Baileys socket for teacher ${teacherIdStr}:`, err.message);
       try {
-        sock.end();
+        sock.end(undefined);
       } catch {}
     }
   }
@@ -165,3 +224,4 @@ module.exports = {
   disconnectSession,
   getWhatsAppSocket,
 };
+

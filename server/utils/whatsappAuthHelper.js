@@ -1,10 +1,15 @@
 const WhatsAppSession = require('../models/WhatsAppSession');
 const { initAuthCreds, BufferJSON } = require('@whiskeysockets/baileys');
 
+/**
+ * Custom MongoDB Auth State handler for Baileys WhatsApp sessions.
+ * Ensures buffer serialization/deserialization via BufferJSON and
+ * escapes dot characters in keys to prevent MongoDB path collision errors.
+ */
 const useMongoDBAuthState = async (teacherId) => {
   const teacherIdStr = teacherId.toString();
 
-  // Find existing session or initialize a new one
+  // Find existing session or initialize a new document
   let session = await WhatsAppSession.findOne({ teacherId: teacherIdStr });
   if (!session) {
     session = new WhatsAppSession({
@@ -33,18 +38,22 @@ const useMongoDBAuthState = async (teacherId) => {
       creds,
       keys: {
         get: async (type, ids) => {
-          // Always read the latest keys from the database to prevent stale reads
-          const currentSession = await WhatsAppSession.findOne({ teacherId: teacherIdStr });
+          const currentSession = await WhatsAppSession.findOne({ teacherId: teacherIdStr }).lean();
           const data = {};
           if (currentSession && currentSession.keys) {
+            const rawKeys = currentSession.keys;
             for (const id of ids) {
-              const key = `${type}-${id}`;
-              const serialized = currentSession.keys.get(key);
+              const rawKey = `${type}-${id}`;
+              const safeKey = rawKey.replace(/\./g, '__dot__');
+              const serialized = rawKeys instanceof Map
+                ? (rawKeys.get(safeKey) || rawKeys.get(rawKey))
+                : (rawKeys[safeKey] || rawKeys[rawKey]);
+
               if (serialized) {
                 try {
                   data[id] = JSON.parse(serialized, BufferJSON.reviver);
                 } catch (err) {
-                  console.error(`Failed to parse session key ${key}:`, err.message);
+                  console.error(`Failed to parse session key ${rawKey}:`, err.message);
                 }
               }
             }
@@ -60,12 +69,15 @@ const useMongoDBAuthState = async (teacherId) => {
           for (const type in data) {
             for (const id in data[type]) {
               const value = data[type][id];
-              const key = `keys.${type}-${id}`;
-              if (value) {
-                updateFields[key] = JSON.stringify(value, BufferJSON.replacer);
+              const rawKey = `${type}-${id}`;
+              const safeKey = rawKey.replace(/\./g, '__dot__');
+              const mongoField = `keys.${safeKey}`;
+
+              if (value !== null && value !== undefined) {
+                updateFields[mongoField] = JSON.stringify(value, BufferJSON.replacer);
                 hasUpdates = true;
               } else {
-                unsetFields[key] = "";
+                unsetFields[mongoField] = '';
                 hasUnsets = true;
               }
             }
@@ -77,7 +89,6 @@ const useMongoDBAuthState = async (teacherId) => {
 
           if (hasUpdates || hasUnsets) {
             try {
-              // Perform atomic updates directly in MongoDB to prevent document version conflicts or DocumentNotFoundError on logout
               await WhatsAppSession.updateOne({ teacherId: teacherIdStr }, updateOp);
             } catch (err) {
               console.error(`Failed to save keys update in MongoDB for teacher ${teacherIdStr}:`, err.message);
@@ -89,7 +100,6 @@ const useMongoDBAuthState = async (teacherId) => {
     saveCreds: async () => {
       try {
         const serializedCreds = JSON.stringify(creds, BufferJSON.replacer);
-        // Perform atomic update for credentials
         await WhatsAppSession.updateOne(
           { teacherId: teacherIdStr },
           { $set: { creds: serializedCreds } }
@@ -102,3 +112,4 @@ const useMongoDBAuthState = async (teacherId) => {
 };
 
 module.exports = { useMongoDBAuthState };
+
