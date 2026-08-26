@@ -1,4 +1,4 @@
-import { Menu, GraduationCap } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function MobileHeader() {
@@ -26,8 +26,12 @@ export default function MobileHeader() {
         >
           <Menu className="w-5.5 h-5.5" />
         </button>
-        <div className="p-1 bg-amber-500 text-white rounded-md">
-          <GraduationCap className="w-4 h-4" />
+        <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
+          <img
+            src="/myAcademyLogo.png"
+            alt="MyAcademy Logo"
+            className="w-full h-full object-cover rounded-full"
+          />
         </div>
         <span className="font-sans font-bold text-lg text-slate-900 tracking-tight">
           My<span className="text-amber-500">Academy</span>

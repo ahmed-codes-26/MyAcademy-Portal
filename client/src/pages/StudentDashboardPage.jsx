@@ -16,7 +16,6 @@ import {
   File,
   FileSpreadsheet,
   Presentation,
-  GraduationCap,
   Flame,
 } from 'lucide-react';
 import {
@@ -159,11 +158,15 @@ export default function StudentDashboardPage() {
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm w-full">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Left Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-sm shrink-0">
-              <GraduationCap className="w-5 h-5" />
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
+              <img
+                src="/myAcademyLogo.png"
+                alt="MyAcademy Logo"
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
-            <span className="font-sans font-bold text-xl text-slate-900 tracking-tight">
+            <span className="font-sans font-bold text-xl sm:text-2xl text-slate-900 tracking-tight">
               My<span className="text-amber-500">Academy</span>
             </span>
             <span className="font-bold text-slate-800 text-base hidden sm:inline border-l border-slate-200 pl-3">

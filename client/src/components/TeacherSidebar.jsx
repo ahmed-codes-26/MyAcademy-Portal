@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, CalendarCheck, CreditCard, BarChart3, FileText, LogOut, MessageSquare, X, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck, CreditCard, BarChart3, FileText, LogOut, MessageSquare, X } from 'lucide-react';
 
 export default function TeacherSidebar() {
   const { admin, logout } = useAuth();
@@ -57,9 +57,13 @@ export default function TeacherSidebar() {
       }`}>
         {/* Brand Header */}
         <div className="px-6 mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-sm">
-              <GraduationCap className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
+              <img
+                src="/myAcademyLogo.png"
+                alt="MyAcademy Logo"
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
             <div>
               <h1 className="font-sans text-xl font-bold text-slate-900 tracking-tight">

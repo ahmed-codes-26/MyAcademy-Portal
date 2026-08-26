@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import { Mail, Lock, ArrowLeft, Loader2, User, School, ShieldCheck, GraduationCap, Send, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, Loader2, User, School, ShieldCheck, Send, Eye, EyeOff } from 'lucide-react';
 import api from '../api/axios';
 
 export default function LoginPage() {
@@ -64,20 +64,25 @@ export default function LoginPage() {
       </div>
 
       <div className="relative w-full max-w-md">
-        {/* Logo & Title */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center gap-2.5 mb-3">
-            <div className="p-2.5 bg-amber-500 text-white rounded-xl shadow-md shadow-amber-500/20">
-              <GraduationCap className="w-7 h-7" />
-            </div>
-            <span className="font-sans font-bold text-3xl text-slate-900 tracking-tight">
-              My<span className="text-amber-500">Academy</span>
-            </span>
+        {/* Centered Vertical Stack Branding */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white p-2 shadow-md border border-slate-200/80 mb-3 flex items-center justify-center shrink-0">
+            <img
+              src="/myAcademyLogo.png"
+              alt="MyAcademy Logo"
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {mode === 'login' ? 'MyAcademy Portal' : 'Password Recovery'}
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            {mode === 'login' ? (
+              <>
+                My<span className="text-amber-500">Academy</span> Portal
+              </>
+            ) : (
+              'Password Recovery'
+            )}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1.5 font-medium">
             {mode === 'login'
               ? 'Sign in to access your portal'
               : 'Submit a request and the admin will assist you'}
