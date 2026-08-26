@@ -15,6 +15,7 @@ export default function TeacherAttendancePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deletingAttendance, setDeletingAttendance] = useState(false);
+  const [isAllPresent, setIsAllPresent] = useState(false);
 
   const toast = useToast();
 
@@ -84,6 +85,27 @@ export default function TeacherAttendancePage() {
   useEffect(() => {
     fetchAttendance();
   }, [fetchAttendance]);
+
+  // Sync master toggle status when student attendance changes
+  useEffect(() => {
+    if (students.length > 0 && students.every((s) => s.status === 'present')) {
+      setIsAllPresent(true);
+    } else {
+      setIsAllPresent(false);
+    }
+  }, [students]);
+
+  // Master toggle to switch all students between Present and Absent
+  const handleToggleAll = () => {
+    if (!isEditing || students.length === 0) return;
+    const nextStatus = isAllPresent ? 'absent' : 'present';
+    setStudents((prev) =>
+      prev.map((s) => ({
+        ...s,
+        status: nextStatus,
+      }))
+    );
+  };
 
   // Toggles the Present/Absent switch
   const handleToggleStatus = (studentId) => {
@@ -344,11 +366,35 @@ export default function TeacherAttendancePage() {
 
           {/* Student List Section */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-sm font-bold text-slate-800">Student List</h3>
-              <span className="bg-amber-50 text-amber-700 border border-amber-100 px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
-                Total Class Students: {students.length}
-              </span>
+            <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-bold text-slate-800">Student List</h3>
+                <span className="bg-amber-50 text-amber-700 border border-amber-100 px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+                  Total Class Students: {students.length}
+                </span>
+              </div>
+
+              {/* Master Attendance Toggle */}
+              <div className="flex items-center gap-3 bg-white px-3.5 py-1.5 rounded-lg border border-slate-200 shadow-xs">
+                <span className="text-xs font-bold text-slate-700">
+                  {isAllPresent ? 'All Present' : 'Mark All Present'}
+                </span>
+                <button
+                  type="button"
+                  disabled={!isEditing || students.length === 0}
+                  onClick={handleToggleAll}
+                  title={isAllPresent ? 'Mark all absent' : 'Mark all present'}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isAllPresent ? 'bg-emerald-500' : 'bg-slate-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      isAllPresent ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto max-w-full w-full">
