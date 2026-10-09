@@ -22,7 +22,8 @@ app.use(cors({
   origin: [
     'https://myacademyportal.online',
     'https://www.myacademyportal.online',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://myacademy-portal.onrender.com'
   ],
   credentials: true
 }));
