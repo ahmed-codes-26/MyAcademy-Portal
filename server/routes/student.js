@@ -4,6 +4,7 @@ const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
 const FeePayment = require('../models/FeePayment');
 const Note = require('../models/Note');
+const { attendancePercentage } = require('../utils/attendanceStats');
 
 const router = express.Router();
 
@@ -58,7 +59,7 @@ router.get('/dashboard', async (req, res) => {
     });
 
     const totalDays = attendanceRecords.length;
-    const attendancePercentage = totalDays > 0 ? Math.round((presents / totalDays) * 100) : 100;
+    const percentage = attendancePercentage(presents, absents);
 
     // Calculate consecutive presence streak (most recent first)
     const allRecordsForStreak = await Attendance.find({ student: studentId }).sort({ date: -1 });
@@ -101,13 +102,13 @@ router.get('/dashboard', async (req, res) => {
 
     // Transform to chart points (cumulative or daily percentage)
     let cumulativePresents = 0;
-    let totalTracked = 0;
+    let cumulativeAbsents = 0;
     const attendanceTrends = Object.values(trendMap).map((point) => {
-      totalTracked++;
       if ((point.status || '').toLowerCase() === 'present') cumulativePresents++;
+      if ((point.status || '').toLowerCase() === 'absent') cumulativeAbsents++;
       return {
         date: point.date,
-        percentage: Math.round((cumulativePresents / totalTracked) * 100),
+        percentage: attendancePercentage(cumulativePresents, cumulativeAbsents),
       };
     });
 
@@ -179,7 +180,7 @@ router.get('/dashboard', async (req, res) => {
         absents,
         leaves,
         totalDays,
-        percentage: attendancePercentage,
+        percentage,
         streak,
       },
       fee: {

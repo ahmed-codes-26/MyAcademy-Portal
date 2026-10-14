@@ -3,6 +3,7 @@ const auth = require('../middleware/auth');
 const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
 const FeePayment = require('../models/FeePayment');
+const { attendancePercentage, attendancePeriod, summarizeAttendance, studentAttendanceSummaries } = require('../utils/attendanceStats');
 
 const router = express.Router();
 
@@ -73,7 +74,7 @@ router.get('/dashboard', async (req, res) => {
       {
         $group: {
           _id: '$student',
-          total: { $sum: 1 },
+          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
           present: {
             $sum: {
               $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
@@ -86,10 +87,7 @@ router.get('/dashboard', async (req, res) => {
     // Map stats for easy lookup
     const statsMap = {};
     overallStats.forEach((stat) => {
-      const totalDays = stat.total || 0;
-      const presentDays = stat.present || 0;
-      const pct = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 100;
-      statsMap[stat._id.toString()] = pct;
+      statsMap[stat._id.toString()] = attendancePercentage(stat.present, stat.absent);
     });
 
     // Combine student info with their overall percentage
@@ -97,7 +95,7 @@ router.get('/dashboard', async (req, res) => {
       _id: s._id,
       name: s.name,
       rollNumber: s.rollNumber,
-      attendancePercentage: statsMap[s._id.toString()] !== undefined ? statsMap[s._id.toString()] : 100,
+      attendancePercentage: statsMap[s._id.toString()] ?? 0,
     }));
 
     // 4. Calculate monthly present percentage
@@ -115,7 +113,7 @@ router.get('/dashboard', async (req, res) => {
       {
         $group: {
           _id: null,
-          total: { $sum: 1 },
+          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
           present: {
             $sum: {
               $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
@@ -125,10 +123,7 @@ router.get('/dashboard', async (req, res) => {
       },
     ]);
 
-    let monthlyPresentPct = 100;
-    if (monthlyStats.length > 0 && monthlyStats[0].total > 0) {
-      monthlyPresentPct = Math.round((monthlyStats[0].present / monthlyStats[0].total) * 100);
-    }
+    const monthlyPresentPct = attendancePercentage(monthlyStats[0]?.present || 0, monthlyStats[0]?.absent || 0);
 
     // 5. Monthly attendance trends (grouped by date)
     const dailyTrends = await Attendance.aggregate([
@@ -141,7 +136,7 @@ router.get('/dashboard', async (req, res) => {
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-          total: { $sum: 1 },
+          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
           present: {
             $sum: {
               $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
@@ -154,7 +149,7 @@ router.get('/dashboard', async (req, res) => {
 
     const attendanceTrends = dailyTrends.map((trend) => ({
       date: trend._id,
-      percentage: trend.total > 0 ? Math.round((trend.present / trend.total) * 100) : 100,
+      percentage: attendancePercentage(trend.present, trend.absent),
     }));
 
     res.json({
@@ -511,59 +506,24 @@ router.get('/stats/overview', async (req, res) => {
       return res.status(404).json({ message: 'Student not found or not assigned to you.' });
     }
 
-    let matchQuery = { student: student._id };
-
-    // Apply month/year filters if provided
-    if (month !== undefined && year !== undefined) {
-      const targetMonth = parseInt(month);
-      const targetYear = parseInt(year);
-      const startOfPeriod = new Date(targetYear, targetMonth, 1);
-      const endOfPeriod = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
-
-      // Student must be enrolled during or before the selected period
-      if (student.enrollmentDate > endOfPeriod) {
-        return res.json({
-          studentName: student.name,
-          rollNumber: student.rollNumber,
-          notEnrolledYet: true,
-          attendancePercentage: 0,
-          totalPresents: 0,
-          totalAbsents: 0,
-          feeStatus: 'pending'
-        });
-      }
-
-      matchQuery.date = { $gte: startOfPeriod, $lte: endOfPeriod };
-    } else {
-      // All time overview: only query dates on or after student's enrollmentDate
-      matchQuery.date = { $gte: student.enrollmentDate };
+    let period;
+    try {
+      period = attendancePeriod(month, year);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
     }
 
-    // Aggregate stats
-    const stats = await Attendance.aggregate([
-      { $match: matchQuery },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          present: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
-            },
-          },
-          absent: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'absent'] }, 1, 0],
-            },
-          },
-        },
-      },
-    ]);
+    if (period && student.enrollmentDate >= period.end) {
+      return res.json({
+        studentName: student.name,
+        rollNumber: student.rollNumber,
+        notEnrolledYet: true,
+        ...summarizeAttendance([], student.enrollmentDate),
+        feeStatus: 'pending'
+      });
+    }
 
-    const totalDays = stats.length > 0 ? stats[0].total : 0;
-    const presents = stats.length > 0 ? stats[0].present : 0;
-    const absents = stats.length > 0 ? stats[0].absent : 0;
-    const percentage = totalDays > 0 ? Math.round((presents / totalDays) * 100) : 100;
+    const summaries = await studentAttendanceSummaries([student], period);
 
     // Fetch Fee Status for the specified month/year or the current month as default
     let feeMonth = new Date().getMonth();
@@ -585,9 +545,7 @@ router.get('/stats/overview', async (req, res) => {
       studentName: student.name,
       rollNumber: student.rollNumber,
       notEnrolledYet: false,
-      attendancePercentage: percentage,
-      totalPresents: presents,
-      totalAbsents: absents,
+      ...summaries.get(student._id.toString()),
       feeStatus
     });
   } catch (error) {
@@ -612,45 +570,25 @@ router.get('/stats/class', async (req, res) => {
     const targetMonth = parseInt(month);
     const targetYear = parseInt(year);
 
-    const startOfPeriod = new Date(targetYear, targetMonth, 1);
-    const endOfPeriod = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+    let period;
+    try {
+      period = attendancePeriod(month, year);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
 
     // Get all eligible students (respect enrollment date)
     const students = await Student.find({
       assignedTeacher: teacherId,
-      enrollmentDate: { $lte: endOfPeriod }
+      enrollmentDate: { $lt: period.end }
     }).sort({ name: 1 });
 
-    // Aggregate monthly attendance stats for these students
-    const attendanceStats = await Attendance.aggregate([
-      {
-        $match: {
-          teacher: teacherId,
-          date: { $gte: startOfPeriod, $lte: endOfPeriod }
-        }
-      },
-      {
-        $group: {
-          _id: '$student',
-          total: { $sum: 1 },
-          present: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'present'] }, 1, 0]
-            }
-          }
-        }
-      }
-    ]);
-
-    const statsMap = {};
-    attendanceStats.forEach((stat) => {
-      const pct = stat.total > 0 ? Math.round((stat.present / stat.total) * 100) : 100;
-      statsMap[stat._id.toString()] = pct;
-    });
+    // Use the same student history and enrollment rules as the individual profile.
+    const summaries = await studentAttendanceSummaries(students, period);
 
     // Fetch monthly fee statuses
     const feePayments = await FeePayment.find({
-      teacher: teacherId,
+      student: { $in: students.map((student) => student._id) },
       month: targetMonth,
       year: targetYear
     });
@@ -665,7 +603,7 @@ router.get('/stats/class', async (req, res) => {
       _id: s._id,
       name: s.name,
       rollNumber: s.rollNumber,
-      attendancePercentage: statsMap[s._id.toString()] !== undefined ? statsMap[s._id.toString()] : 100,
+      ...summaries.get(s._id.toString()),
       feeStatus: feeMap[s._id.toString()] || 'pending'
     }));
 

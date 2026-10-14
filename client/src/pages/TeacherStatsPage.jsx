@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
 import { useToast } from '../components/Toast';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Search, CheckCircle2, XCircle, ShieldAlert, Loader2, HelpCircle, Eye, EyeOff } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, ShieldAlert, Loader2, HelpCircle, Eye, EyeOff, CalendarDays } from 'lucide-react';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -12,6 +12,10 @@ const MONTHS = [
 ];
 
 const YEARS = [2025, 2026, 2027, 2028];
+
+const formatAttendanceDate = (date) => new Date(`${date}T00:00:00Z`).toLocaleDateString('en-GB', {
+  weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+});
 
 export default function TeacherStatsPage() {
   const currentDate = new Date();
@@ -25,81 +29,86 @@ export default function TeacherStatsPage() {
   const [studentSearch, setStudentSearch] = useState('');
   const [statsMonth, setStatsMonth] = useState('all'); // 'all' or 0-11
   const [statsYear, setStatsYear] = useState(currentDate.getFullYear());
-  const [studentStats, setStudentStats] = useState(null);
-  const [loadingStudent, setLoadingStudent] = useState(false);
+  const [studentResult, setStudentResult] = useState(null);
+  const [loadingStudents, setLoadingStudents] = useState(true);
+  const [studentListError, setStudentListError] = useState(false);
 
   // Class Overview Stats State
   const [classMonth, setClassMonth] = useState(currentDate.getMonth()); // 0-11
   const [classYear, setClassYear] = useState(currentDate.getFullYear());
   const [classOverview, setClassOverview] = useState([]);
   const [loadingClass, setLoadingClass] = useState(true);
+  const [classError, setClassError] = useState(false);
 
   const toast = useToast();
 
-  // Fetch student directory for dropdown
-  const fetchStudentList = useCallback(async () => {
-    try {
-      const res = await api.get('/teacher/stats/students');
-      setStudentList(res.data);
-      if (res.data.length > 0) {
-        setSelectedStudentId(res.data[0]._id);
+  const search = studentSearch.trim().toLowerCase();
+  const filteredSearchStudents = studentList.filter((student) =>
+    student.name.toLowerCase().includes(search) || student.rollNumber.toLowerCase().includes(search)
+  );
+  // Both the selector and profile always use a student from the visible results.
+  const activeStudentId = filteredSearchStudents.some((student) => student._id === selectedStudentId)
+    ? selectedStudentId : filteredSearchStudents[0]?._id || '';
+  const requestKey = `${activeStudentId}:${statsMonth}:${statsYear}`;
+  const currentResult = activeStudentId && studentResult?.key === requestKey ? studentResult : null;
+  const studentStats = currentResult?.data;
+  const loadingStudent = loadingStudents || Boolean(activeStudentId && !currentResult);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    api.get('/teacher/stats/students', { signal: controller.signal }).then((res) => {
+      if (active) setStudentList(res.data);
+    }).catch(() => {
+      if (active) {
+        setStudentListError(true);
+        toast.error('Failed to load student list.');
       }
-    } catch {
-      toast.error('Failed to load student list.');
-    }
+    }).finally(() => {
+      if (active) setLoadingStudents(false);
+    });
+    return () => { active = false; controller.abort(); };
   }, [toast]);
 
-  // Fetch individual student stats overview
-  const fetchStudentStats = useCallback(async () => {
-    if (!selectedStudentId) return;
-    setLoadingStudent(true);
-    try {
-      let url = `/teacher/stats/overview?studentId=${selectedStudentId}`;
-      if (statsMonth !== 'all') {
-        url += `&month=${statsMonth}&year=${statsYear}`;
+  useEffect(() => {
+    if (!activeStudentId) return;
+    let active = true;
+    const controller = new AbortController();
+    const params = { studentId: activeStudentId };
+    if (statsMonth !== 'all') Object.assign(params, { month: statsMonth, year: statsYear });
+    api.get('/teacher/stats/overview', { params, signal: controller.signal }).then((res) => {
+      if (active) setStudentResult({ key: requestKey, data: res.data });
+    }).catch(() => {
+      if (active) {
+        setStudentResult({ key: requestKey, error: true });
+        toast.error('Failed to calculate student statistics.');
       }
-      const res = await api.get(url);
-      setStudentStats(res.data);
-    } catch {
-      toast.error('Failed to calculate student statistics.');
-    } finally {
-      setLoadingStudent(false);
-    }
-  }, [selectedStudentId, statsMonth, statsYear, toast]);
+    });
+    return () => { active = false; controller.abort(); };
+  }, [activeStudentId, statsMonth, statsYear, requestKey, toast]);
 
-  // Fetch class overview stats table
-  const fetchClassOverview = useCallback(async () => {
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
     setLoadingClass(true);
-    try {
-      const res = await api.get(`/teacher/stats/class?month=${classMonth}&year=${classYear}`);
-      setClassOverview(res.data);
-    } catch {
-      toast.error('Failed to load class statistics.');
-    } finally {
-      setLoadingClass(false);
-    }
+    setClassError(false);
+    api.get(`/teacher/stats/class?month=${classMonth}&year=${classYear}`, { signal: controller.signal }).then((res) => {
+      if (active) setClassOverview(res.data);
+    }).catch(() => {
+      if (active) {
+        setClassOverview([]);
+        setClassError(true);
+        toast.error('Failed to load class statistics.');
+      }
+    }).finally(() => {
+      if (active) setLoadingClass(false);
+    });
+    return () => { active = false; controller.abort(); };
   }, [classMonth, classYear, toast]);
 
-  useEffect(() => {
-    fetchStudentList();
-  }, [fetchStudentList]);
-
-  useEffect(() => {
-    fetchStudentStats();
-  }, [fetchStudentStats]);
-
-  useEffect(() => {
-    fetchClassOverview();
-  }, [fetchClassOverview]);
-
-  // Filter students for search dropdown
-  const filteredSearchStudents = studentList.filter((s) =>
-    s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
-    s.rollNumber.toLowerCase().includes(studentSearch.toLowerCase())
-  );
-
   // Setup donut chart data
-  const pct = studentStats?.attendancePercentage || 0;
+  const pct = studentStats?.attendancePercentage ?? 0;
+  const hasAttendanceRate = studentStats?.countedDays > 0;
   const chartData = [
     { name: 'Present', value: pct },
     { name: 'Absent', value: 100 - pct },
@@ -140,7 +149,7 @@ export default function TeacherStatsPage() {
           {/* Section 1: Single Student Overview (Bento Grid) */}
           <section className="space-y-4">
             <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Single Student Profile Bento</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Student Attendance</h2>
               <button
                 type="button"
                 onClick={() => setIsDataVisible(!isDataVisible)}
@@ -160,22 +169,28 @@ export default function TeacherStatsPage() {
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                   Select Student
                 </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1 min-w-0">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       placeholder="Type name or roll number..."
                       value={studentSearch}
-                      onChange={(e) => setStudentSearch(e.target.value)}
+                      aria-label="Search students"
+                      onChange={(e) => {
+                        setStudentSearch(e.target.value);
+                        setSelectedStudentId('');
+                      }}
                       className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm placeholder:text-slate-400 outline-none focus:border-amber-500 focus:bg-white transition-all"
                     />
                   </div>
                   
                   <select
-                    value={selectedStudentId}
+                    aria-label="Select student"
+                    value={activeStudentId}
+                    disabled={filteredSearchStudents.length === 0}
                     onChange={(e) => setSelectedStudentId(e.target.value)}
-                    className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer max-w-[200px]"
+                    className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer w-full sm:w-auto sm:max-w-[200px]"
                   >
                     {filteredSearchStudents.length === 0 ? (
                       <option value="">No matches</option>
@@ -233,6 +248,10 @@ export default function TeacherStatsPage() {
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span>Recalculating profile stats...</span>
               </div>
+            ) : currentResult?.error || studentListError ? (
+              <div role="alert" className="bg-rose-50 border border-rose-200 rounded-xl p-6 text-center text-rose-700">
+                Could not load student statistics. Please refresh to try again.
+              </div>
             ) : studentStats?.notEnrolledYet ? (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 flex flex-col items-center justify-center text-center gap-2">
                 <ShieldAlert className="w-10 h-10 text-amber-500" />
@@ -243,6 +262,9 @@ export default function TeacherStatsPage() {
               </div>
             ) : studentStats ? (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <p className="md:col-span-4 text-sm font-semibold text-slate-700">
+                  Attendance for {studentStats.studentName}
+                </p>
                 
                 {/* Large Card 1: Attendance Percentage Donut Chart */}
                 <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center min-h-[220px]">
@@ -267,9 +289,15 @@ export default function TeacherStatsPage() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-extrabold text-slate-800 leading-none">{pct}%</span>
+                      <span className="text-3xl font-extrabold text-slate-800 leading-none">{hasAttendanceRate ? `${pct}%` : '—'}</span>
                     </div>
                   </div>
+                  <p className="mt-3 text-xs text-slate-500 text-center">
+                    {hasAttendanceRate
+                      ? `${studentStats.totalPresents} present / ${studentStats.countedDays} counted days`
+                      : 'No attendance rate yet.'}
+                    <span className="block mt-1">Leave and unmarked days are excluded.</span>
+                  </p>
                 </div>
 
                 {/* Small Card 2: Total Presents */}
@@ -291,7 +319,13 @@ export default function TeacherStatsPage() {
                 </div>
 
                 {/* Medium Card 4: Fee Status */}
-                <div className="md:col-span-2 md:col-start-3 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
+                <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
+                  <CalendarDays className="w-6 h-6 text-amber-500 mb-3" />
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">On Leave</span>
+                  <span className="text-3xl font-extrabold text-slate-800">{studentStats.totalLeaves}</span>
+                </div>
+
+                <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
                   <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
                     Fee Status ({statsMonth === 'all' ? MONTHS[currentDate.getMonth()] : MONTHS[statsMonth]} {statsMonth === 'all' ? currentDate.getFullYear() : statsYear})
                   </span>
@@ -305,10 +339,28 @@ export default function TeacherStatsPage() {
                     {studentStats.feeStatus === 'submitted' ? 'SUBMITTED' : 'PENDING'}
                   </span>
                 </div>
+
+                {[
+                  { title: 'Absent dates', dates: studentStats.absentDates || [], color: 'bg-rose-50 text-rose-700', empty: 'No absences recorded in this period.' },
+                  { title: 'Leave dates', dates: studentStats.leaveDates || [], color: 'bg-amber-50 text-amber-700', empty: 'No leave recorded in this period.' },
+                ].map(({ title, dates, color, empty }) => (
+                  <div key={title} className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 className="text-sm font-bold text-slate-700 mb-4">{title} ({dates.length})</h3>
+                    {dates.length ? (
+                      <ul className="flex flex-wrap gap-2 max-h-64 overflow-y-auto" aria-label={title}>
+                        {dates.map((date) => (
+                          <li key={date} className={`px-3 py-2 rounded-lg text-xs font-semibold ${color}`}>
+                            <time dateTime={date}>{formatAttendanceDate(date)}</time>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="text-sm text-slate-400">{empty}</p>}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center text-slate-400">
-                Select a student to display metrics.
+                {studentSearch.trim() ? 'No students match your search.' : 'No students assigned yet.'}
               </div>
             )}
           </section>
@@ -364,6 +416,12 @@ export default function TeacherStatsPage() {
                           </div>
                         </td>
                       </tr>
+                    ) : classError ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-rose-600">
+                          Could not load class statistics. Please refresh to try again.
+                        </td>
+                      </tr>
                     ) : classOverview.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
@@ -388,7 +446,9 @@ export default function TeacherStatsPage() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <span className="w-8 font-bold text-slate-700">{attPct}%</span>
+                                <span className="min-w-8 font-bold text-slate-700" title={student.countedDays ? 'Presents / (presents + absents). Leave excluded.' : 'No present or absent records in this period.'}>
+                                  {student.countedDays ? `${attPct}%` : '—'}
+                                </span>
                                 <div className="w-28 h-2 bg-slate-100 rounded-full overflow-hidden">
                                   <div
                                     className={`h-full rounded-full transition-all duration-300 ${
