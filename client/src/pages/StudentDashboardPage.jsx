@@ -161,7 +161,11 @@ export default function StudentDashboardPage() {
           <div className="flex items-center gap-2.5 sm:gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
               <img
-                src="/myAcademyLogo.png"
+                src="/logo-42.webp"
+                srcSet="/logo-34.webp 34w, /logo-42.webp 42w, /logo-68.webp 68w, /logo-84.webp 84w"
+                sizes="(min-width: 640px) 42px, 34px"
+                width={42}
+                height={42}
                 alt="MyAcademy Logo"
                 className="w-full h-full object-cover rounded-full"
               />
@@ -197,7 +201,7 @@ export default function StudentDashboardPage() {
             {/* Student Avatar */}
             <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
               {student?.profilePicture ? (
-                <img src={student.profilePicture} alt={student.name} className="w-full h-full object-cover" />
+                <img src={student.profilePicture} width={36} height={36} alt={student.name || 'Student'} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-xs font-bold text-amber-700">{initials}</span>
               )}
@@ -215,6 +219,8 @@ export default function StudentDashboardPage() {
             {student?.profilePicture ? (
               <img
                 src={student.profilePicture}
+                width={80}
+                height={80}
                 alt={student.name || 'Student'}
                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-amber-200 shadow-sm shrink-0"
               />

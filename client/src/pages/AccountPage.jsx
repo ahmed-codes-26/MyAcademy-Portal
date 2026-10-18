@@ -110,6 +110,8 @@ export default function AccountPage() {
               {admin?.profilePicture ? (
                 <img
                   src={admin.profilePicture}
+                  width={80}
+                  height={80}
                   alt={admin.name}
                   className="w-20 h-20 rounded-full object-cover border-2 border-slate-200"
                 />

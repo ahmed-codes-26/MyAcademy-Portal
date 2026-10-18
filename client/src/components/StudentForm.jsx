@@ -104,7 +104,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
             <div className="relative group">
               <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-amber-200 flex items-center justify-center overflow-hidden shadow-sm">
                 {preview ? (
-                  <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={preview} width={80} height={80} alt="Student profile preview" className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-10 h-10 text-slate-400" />
                 )}

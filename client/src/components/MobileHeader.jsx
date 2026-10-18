@@ -28,7 +28,10 @@ export default function MobileHeader() {
         </button>
         <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
           <img
-            src="/myAcademyLogo.png"
+            src="/logo-30.webp"
+            srcSet="/logo-30.webp 1x, /logo-60.webp 2x"
+            width={30}
+            height={30}
             alt="MyAcademy Logo"
             className="w-full h-full object-cover rounded-full"
           />
@@ -42,6 +45,8 @@ export default function MobileHeader() {
         {admin?.profilePicture ? (
           <img
             src={admin.profilePicture}
+            width={32}
+            height={32}
             alt={admin.name}
             className="w-8 h-8 rounded-full object-cover border border-slate-200"
           />

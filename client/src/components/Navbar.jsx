@@ -18,7 +18,11 @@ export default function Navbar() {
         <div className="flex items-center gap-2.5 sm:gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
             <img
-              src="/myAcademyLogo.png"
+              src="/logo-42.webp"
+              srcSet="/logo-34.webp 34w, /logo-42.webp 42w, /logo-68.webp 68w, /logo-84.webp 84w"
+              sizes="(min-width: 640px) 42px, 34px"
+              width={42}
+              height={42}
               alt="MyAcademy Logo"
               className="w-full h-full object-cover rounded-full"
             />

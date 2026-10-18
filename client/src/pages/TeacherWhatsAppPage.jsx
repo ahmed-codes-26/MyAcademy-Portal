@@ -182,6 +182,8 @@ export default function TeacherWhatsAppPage() {
                         <div className="bg-slate-50 p-4 border border-slate-100 rounded-xl inline-block shadow-inner">
                           <img
                             src={qrCode}
+                            width={192}
+                            height={192}
                             alt="WhatsApp Link QR Code"
                             className="w-48 h-48 mx-auto"
                           />

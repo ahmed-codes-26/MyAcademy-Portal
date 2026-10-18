@@ -68,7 +68,11 @@ export default function LoginPage() {
         <div className="flex flex-col items-center text-center mb-6">
           <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white p-2 shadow-md border border-slate-200/80 mb-3 flex items-center justify-center shrink-0">
             <img
-              src="/myAcademyLogo.png"
+              src="/logo-142.webp"
+              srcSet="/logo-110.webp 110w, /logo-142.webp 142w, /logo-220.webp 220w, /logo-284.webp 284w"
+              sizes="(min-width: 640px) 142px, 110px"
+              width={142}
+              height={142}
               alt="MyAcademy Logo"
               className="w-full h-full object-cover rounded-full"
             />

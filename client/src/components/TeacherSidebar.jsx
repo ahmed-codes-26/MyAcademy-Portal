@@ -60,7 +60,10 @@ export default function TeacherSidebar() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
               <img
-                src="/myAcademyLogo.png"
+                src="/logo-42.webp"
+                srcSet="/logo-42.webp 1x, /logo-84.webp 2x"
+                width={42}
+                height={42}
                 alt="MyAcademy Logo"
                 className="w-full h-full object-cover rounded-full"
               />
@@ -112,6 +115,8 @@ export default function TeacherSidebar() {
             {admin?.profilePicture ? (
               <img
                 src={admin.profilePicture}
+                width={40}
+                height={40}
                 alt={admin.name}
                 className="w-10 h-10 rounded-full object-cover border border-slate-200"
               />
