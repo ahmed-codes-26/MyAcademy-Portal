@@ -35,6 +35,8 @@ export default function AccountPage() {
       if (!payload.password) delete payload.password;
 
       const res = await api.put('/admin/profile', payload);
+      // Password changes revoke previous tokens; retain this account's renewed session.
+      if (res.data.token) localStorage.setItem('token', res.data.token);
       updateAdmin(res.data.admin);
       toast.success('Profile updated successfully!');
       setForm((prev) => ({ ...prev, password: '' }));
