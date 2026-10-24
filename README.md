@@ -60,6 +60,8 @@ Tests never load `server/.env`. They start temporary MongoDB processes; the firs
 1. Install dependencies and build the frontend.
 2. Set `NODE_ENV=production`, permanent secrets, and the correct `MONGODB_URI`/Cloudinary values.
 3. Set `CORS_ORIGINS` to exact HTTPS frontend origins. Set `TRUST_PROXY` only for the actual trusted reverse proxy; production requests must arrive over HTTPS.
+
+   For a Render web service directly behind Render's reverse proxy, set `TRUST_PROXY=1` in the backend environment. Render terminates HTTPS before forwarding to Express; this setting lets Express recognize the forwarded HTTPS connection. Without it, browser preflight requests receive `400 HTTPS is required`, which appears as a CORS error. Include `https://myacademy-portal-1.onrender.com` in `CORS_ORIGINS` if that is your frontend address (alongside any custom frontend domains you use). Reassess the trusted proxy setting if your proxy topology changes.
 4. Run `npm run db:indexes --prefix server`, then start the API.
 
 Choose one frontend hosting arrangement:

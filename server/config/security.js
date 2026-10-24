@@ -7,8 +7,7 @@ if (!jwtSecret || Buffer.byteLength(jwtSecret) < 32) {
 }
 
 const defaultOrigins = [
-  'https://myacademyportal.online',
-  'https://www.myacademyportal.online',
+  'https://myacademy.ahmedcodes.pro',
   'https://myacademy-portal-1.onrender.com',
   ...(!production ? ['http://localhost:5173', 'http://localhost:4173'] : []),
 ];

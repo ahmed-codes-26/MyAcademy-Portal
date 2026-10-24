@@ -34,7 +34,9 @@ export default function LoginPage() {
         navigate('/', { replace: true });
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      toast.error(err.response?.data?.message || (err.response
+        ? 'Login failed. Please try again.'
+        : 'Unable to reach the server. Please check your connection or contact the administrator.'));
     } finally {
       setLoading(false);
     }
