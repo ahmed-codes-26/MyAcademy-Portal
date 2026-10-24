@@ -1,6 +1,7 @@
+import profileImage from '../utils/profileImage';
 import { useState, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
+import { useAuth } from '../context/auth';
+import { useToast } from '../context/toast';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
 import { Camera, Save, Loader2, User, Mail, Phone, Lock, ArrowLeft } from 'lucide-react';
@@ -111,7 +112,7 @@ export default function AccountPage() {
             <div className="relative">
               {admin?.profilePicture ? (
                 <img
-                  src={admin.profilePicture}
+                  src={profileImage(admin.profilePicture, 96)}
                   width={80}
                   height={80}
                   alt={admin.name}

@@ -1,3 +1,4 @@
+const { reportError } = require('../utils/logger');
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -17,7 +18,7 @@ const uploadStreamToCloudinary = (fileBuffer, options = {}) => {
     }
     const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
       if (error) {
-        console.error('Cloudinary upload_stream error:', error);
+        reportError(error, 'cloudinary_upload_stream_error');
         return reject(error);
       }
       resolve(result);
@@ -27,6 +28,5 @@ const uploadStreamToCloudinary = (fileBuffer, options = {}) => {
 };
 
 cloudinary.uploadStreamToCloudinary = uploadStreamToCloudinary;
-cloudinary.cloudinary = cloudinary;
 
 module.exports = cloudinary;

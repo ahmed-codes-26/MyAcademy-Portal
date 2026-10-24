@@ -26,7 +26,10 @@ api.interceptors.response.use(
   (error) => {
     // Do not reload/redirect if the 401 comes from the login endpoint itself
     const isLoginEndpoint = error.config?.url?.includes('/auth/login');
-    if (error.response?.status === 401 && !isLoginEndpoint) {
+    const currentToken = localStorage.getItem('token');
+    const sentToken = error.config?.headers?.Authorization;
+    const isCurrentSession = sentToken === (currentToken ? `Bearer ${currentToken}` : undefined);
+    if (error.response?.status === 401 && !isLoginEndpoint && isCurrentSession) {
       localStorage.removeItem('token');
       localStorage.removeItem('admin');
       if (window.location.pathname !== '/login') {

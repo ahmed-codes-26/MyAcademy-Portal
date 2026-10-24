@@ -1,25 +1,32 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import AccountPage from './pages/AccountPage';
-import TeacherDashboardPage from './pages/TeacherDashboardPage';
-import TeacherAttendancePage from './pages/TeacherAttendancePage';
-import TeacherFeePage from './pages/TeacherFeePage';
-import TeacherStatsPage from './pages/TeacherStatsPage';
-import TeacherNotesPage from './pages/TeacherNotesPage';
-import TeacherWhatsAppPage from './pages/TeacherWhatsAppPage';
-import StudentDashboardPage from './pages/StudentDashboardPage';
+import WhatsAppConnectionReminder from './components/WhatsAppConnectionReminder';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const AccountPage = lazy(() => import('./pages/AccountPage'));
+const TeacherDashboardPage = lazy(() => import('./pages/TeacherDashboardPage'));
+const TeacherAttendancePage = lazy(() => import('./pages/TeacherAttendancePage'));
+const TeacherFeePage = lazy(() => import('./pages/TeacherFeePage'));
+const TeacherStatsPage = lazy(() => import('./pages/TeacherStatsPage'));
+const TeacherNotesPage = lazy(() => import('./pages/TeacherNotesPage'));
+const TeacherWhatsAppPage = lazy(() => import('./pages/TeacherWhatsAppPage'));
+const StudentDashboardPage = lazy(() => import('./pages/StudentDashboardPage'));
+const TestNotesPage = lazy(() => import('./pages/TestNotesPage'));
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
+          <WhatsAppConnectionReminder />
+          <Suspense fallback={<div role="status" className="min-h-screen bg-slate-50 flex items-center justify-center text-sm text-slate-500">Loading portal…</div>}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/teacher/test-notes" element={<ProtectedRoute role="teacher"><TestNotesPage /></ProtectedRoute>} />
 
             {/* Admin Panel Routes */}
             <Route
@@ -101,6 +108,7 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
+          </Suspense>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

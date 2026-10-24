@@ -1,12 +1,16 @@
+const { reportError } = require('../utils/logger');
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const Teacher = require('../models/Teacher');
+const requireRole = require('../middleware/roles');
+const { bodyFields, teacherFields, validateId } = require('../middleware/validation');
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(auth);
+router.use(auth, requireRole('admin'));
+router.param('id', validateId);
 
 // GET /api/teachers — List all teachers
 router.get('/', async (req, res) => {
@@ -14,7 +18,7 @@ router.get('/', async (req, res) => {
     const teachers = await Teacher.find().sort({ createdAt: -1 });
     res.json(teachers);
   } catch (error) {
-    console.error('Get teachers error:', error);
+    reportError(error, 'get_teachers_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -22,6 +26,7 @@ router.get('/', async (req, res) => {
 // POST /api/teachers — Create a teacher
 router.post(
   '/',
+  bodyFields(teacherFields),
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('phone').trim().notEmpty().withMessage('Phone number is required'),
@@ -41,7 +46,7 @@ router.post(
 
       res.status(201).json(teacher);
     } catch (error) {
-      console.error('Create teacher error:', error);
+      reportError(error, 'create_teacher_error', req);
       res.status(500).json({ message: 'Server error.' });
     }
   }
@@ -50,6 +55,7 @@ router.post(
 // PUT /api/teachers/:id — Update a teacher
 router.put(
   '/:id',
+  bodyFields(teacherFields),
   [
     body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
     body('phone').optional().trim().notEmpty().withMessage('Phone cannot be empty'),
@@ -81,7 +87,7 @@ router.put(
 
       res.json(teacher);
     } catch (error) {
-      console.error('Update teacher error:', error);
+      reportError(error, 'update_teacher_error', req);
       res.status(500).json({ message: 'Server error.' });
     }
   }
@@ -96,7 +102,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({ message: 'Teacher deleted successfully.' });
   } catch (error) {
-    console.error('Delete teacher error:', error);
+    reportError(error, 'delete_teacher_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });

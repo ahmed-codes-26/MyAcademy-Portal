@@ -1,9 +1,12 @@
+const { reportError } = require('../utils/logger');
 const express = require('express');
 const auth = require('../middleware/auth');
 const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
 const FeePayment = require('../models/FeePayment');
+const { privateFeeFields, automaticallyPaid, currentBillingPeriod } = require('../utils/feePolicy');
 const { attendancePercentage, attendancePeriod, summarizeAttendance, studentAttendanceSummaries } = require('../utils/attendanceStats');
+const { objectId, integer, dateOnly, teacherQuery } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -15,6 +18,7 @@ router.use((req, res, next) => {
   }
   next();
 });
+router.use(teacherQuery);
 
 /**
  * GET /api/teacher/dashboard
@@ -25,132 +29,39 @@ router.get('/dashboard', async (req, res) => {
   try {
     const teacherId = req.userId;
 
-    // End of current calendar month
-    const endOfMonth = new Date();
-    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
-    endOfMonth.setDate(0);
-    endOfMonth.setHours(23, 59, 59, 999);
-
-    // 1. Get eligible students assigned to this teacher
-    const students = await Student.find({
-      assignedTeacher: teacherId,
-      enrollmentDate: { $lte: endOfMonth }
-    }).sort({ name: 1 });
-
+    const { month: currentMonth, year: currentYear } = currentBillingPeriod();
+    const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1));
+    const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 1) - 1);
+    const students = await Student.find({ assignedTeacher: teacherId, enrollmentDate: { $lte: endOfMonth } })
+      .select('name rollNumber fees +feeExempt +feeExemptFrom').sort({ name: 1 }).lean();
     const totalStudents = students.length;
-
-    // 2. Calculate fee received and remaining based on current month's FeePayment records
-    const currentMonth = new Date().getMonth(); // 0-11
-    const currentYear = new Date().getFullYear();
-
-    const studentIds = students.map((s) => s._id);
-    const monthlyFeePayments = await FeePayment.find({
-      student: { $in: studentIds },
-      month: currentMonth,
-      year: currentYear,
-    });
-
-    const paidStudentSet = new Set(
-      monthlyFeePayments
-        .filter((fp) => fp.status === 'submitted')
-        .map((fp) => fp.student.toString())
-    );
-
-    let feeReceived = 0;
-    let feeRemaining = 0;
-    students.forEach((s) => {
-      const studentFee = s.fees || 0;
-      if (paidStudentSet.has(s._id.toString())) {
-        feeReceived += studentFee;
-      } else {
-        feeRemaining += studentFee;
-      }
-    });
-
-    // 3. Calculate overall attendance percentage per student
-    // Aggregate overall attendance stats grouped by student for this teacher
-    const overallStats = await Attendance.aggregate([
-      { $match: { teacher: teacherId } },
-      {
-        $group: {
-          _id: '$student',
-          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
-          present: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
-            },
-          },
-        },
-      },
+    const counts = {
+      absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
+      present: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+    };
+    const monthFilter = { teacher: teacherId, date: { $gte: startOfMonth, $lte: endOfMonth } };
+    const [monthlyFeePayments, overallStats, monthlyStats, dailyTrends] = await Promise.all([
+      FeePayment.find({ student: { $in: students.map((student) => student._id) }, month: currentMonth, year: currentYear })
+        .select('student status').lean(),
+      Attendance.aggregate([{ $match: { teacher: teacherId } }, { $group: { _id: '$student', ...counts } }]),
+      Attendance.aggregate([{ $match: monthFilter }, { $group: { _id: null, ...counts } }]),
+      Attendance.aggregate([{ $match: monthFilter },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } }, ...counts } }, { $sort: { _id: 1 } }]),
     ]);
-
-    // Map stats for easy lookup
-    const statsMap = {};
-    overallStats.forEach((stat) => {
-      statsMap[stat._id.toString()] = attendancePercentage(stat.present, stat.absent);
-    });
-
-    // Combine student info with their overall percentage
-    const studentOverview = students.map((s) => ({
-      _id: s._id,
-      name: s.name,
-      rollNumber: s.rollNumber,
-      attendancePercentage: statsMap[s._id.toString()] ?? 0,
-    }));
-
-    // 4. Calculate monthly present percentage
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const monthlyStats = await Attendance.aggregate([
-      {
-        $match: {
-          teacher: teacherId,
-          date: { $gte: startOfMonth, $lte: endOfMonth },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
-          present: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
-            },
-          },
-        },
-      },
-    ]);
-
+    const paidStudentSet = new Set(monthlyFeePayments.filter((payment) => payment.status === 'submitted')
+      .map((payment) => payment.student.toString()));
+    let feeReceived = 0, feeRemaining = 0;
+    for (const student of students) {
+      if (automaticallyPaid(student, currentMonth, currentYear)) continue;
+      if (paidStudentSet.has(student._id.toString())) feeReceived += student.fees || 0;
+      else feeRemaining += student.fees || 0;
+    }
+    const statsMap = new Map(overallStats.map((stat) => [String(stat._id), attendancePercentage(stat.present, stat.absent)]));
+    const studentOverview = students.map((student) => ({ _id: student._id, name: student.name,
+      rollNumber: student.rollNumber, attendancePercentage: statsMap.get(String(student._id)) ?? 0 }));
     const monthlyPresentPct = attendancePercentage(monthlyStats[0]?.present || 0, monthlyStats[0]?.absent || 0);
-
-    // 5. Monthly attendance trends (grouped by date)
-    const dailyTrends = await Attendance.aggregate([
-      {
-        $match: {
-          teacher: teacherId,
-          date: { $gte: startOfMonth, $lte: endOfMonth },
-        },
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-          absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
-          present: {
-            $sum: {
-              $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
-            },
-          },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
-
-    const attendanceTrends = dailyTrends.map((trend) => ({
-      date: trend._id,
-      percentage: attendancePercentage(trend.present, trend.absent),
-    }));
+    const attendanceTrends = dailyTrends.map((trend) => ({ date: trend._id,
+      percentage: attendancePercentage(trend.present, trend.absent) }));
 
     res.json({
       metrics: {
@@ -163,7 +74,7 @@ router.get('/dashboard', async (req, res) => {
       students: studentOverview,
     });
   } catch (error) {
-    console.error('Teacher dashboard error:', error);
+    reportError(error, 'teacher_dashboard_error', req);
     res.status(500).json({ message: 'Server error loading dashboard metrics.' });
   }
 });
@@ -217,7 +128,7 @@ router.get('/attendance', async (req, res) => {
       students: studentList,
     });
   } catch (error) {
-    console.error('Fetch attendance error:', error);
+    reportError(error, 'fetch_attendance_error', req);
     res.status(500).json({ message: 'Server error fetching attendance.' });
   }
 });
@@ -248,7 +159,7 @@ router.delete('/attendance', async (req, res) => {
       deletedCount: result.deletedCount,
     });
   } catch (error) {
-    console.error('Delete attendance error:', error);
+    reportError(error, 'delete_attendance_error', req);
     res.status(500).json({ message: 'Server error resetting attendance.' });
   }
 });
@@ -260,12 +171,27 @@ router.delete('/attendance', async (req, res) => {
 router.post('/attendance', async (req, res) => {
   try {
     const { date, records } = req.body;
-    if (!date || !records || !Array.isArray(records)) {
+    if (!dateOnly(date) || !Array.isArray(records) || records.length < 1 || records.length > 2000 ||
+        records.some((record) => !record || typeof record !== 'object' || !objectId(record.studentId) ||
+          !['present', 'absent', 'leave'].includes(record.status)) ||
+        new Set(records.map((record) => record.studentId.toLowerCase())).size !== records.length) {
       return res.status(400).json({ message: 'Date and records array are required.' });
     }
 
     const teacherId = req.userId;
     const targetDate = new Date(date + 'T00:00:00.000Z');
+
+    // Reject the entire submission before any write or notification if any ID is out of scope.
+    const roster = await Student.find({ _id: { $in: records.map((record) => record.studentId) },
+      assignedTeacher: teacherId, enrollmentDate: { $lte: targetDate } }).select('_id').lean();
+    if (roster.length !== records.length) {
+      return res.status(403).json({ message: 'Attendance contains students outside your eligible roster.' });
+    }
+    const foreignRecord = await Attendance.exists({ student: { $in: roster.map((student) => student._id) },
+      date: targetDate, teacher: { $ne: teacherId } });
+    if (foreignRecord) {
+      return res.status(409).json({ message: 'Attendance for this date belongs to another teacher.' });
+    }
 
     // 1. Check if this is a new creation vs an update/edit (No-Edit rule)
     const existingRecord = await Attendance.findOne({ teacher: teacherId, date: targetDate });
@@ -275,17 +201,10 @@ router.post('/attendance', async (req, res) => {
     const todayStr = new Date().toISOString().split('T')[0];
     const isToday = date === todayStr;
 
-    console.log('--- Attendance Submit Trigger Debug ---');
-    console.log(`Submitting Date: ${date}`);
-    console.log(`Server Today Date: ${todayStr}`);
-    console.log(`Is Today: ${isToday}`);
-    console.log(`Is New Creation (Not an Edit): ${isNewCreation}`);
-    console.log('-----------------------------------------');
-
     // Create bulk operations to upsert daily records
     const bulkOps = records.map((rec) => ({
       updateOne: {
-        filter: { student: rec.studentId, date: targetDate },
+        filter: { student: rec.studentId, date: targetDate, teacher: teacherId },
         update: {
           status: rec.status,
           teacher: teacherId,
@@ -302,19 +221,15 @@ router.post('/attendance', async (req, res) => {
         .filter((rec) => rec.status && rec.status.toLowerCase() === 'absent')
         .map((rec) => rec.studentId);
 
-      console.log(`Absent student IDs isolated: ${JSON.stringify(absentStudentIds)}`);
-
       if (absentStudentIds.length > 0) {
         // Retrieve teacher's active WhatsApp socket (gracefully handle if missing)
         try {
           const { getWhatsAppSocket } = require('../utils/whatsappManager');
           const sock = getWhatsAppSocket(teacherId);
-          console.log(`Teacher WhatsApp socket found: ${!!sock}`);
-
           if (sock) {
             // Retrieve student details (names & phone numbers)
-            const students = await Student.find({ _id: { $in: absentStudentIds } });
-            console.log(`Fetched absent student details: ${JSON.stringify(students.map(s => ({ name: s.name, phone: s.phone })))}`);
+            const students = await Student.find({ _id: { $in: absentStudentIds }, assignedTeacher: teacherId })
+              .select('name phone').lean();
 
             // Run message dispatch in the background so it doesn't block the HTTP response
             (async () => {
@@ -326,24 +241,20 @@ router.post('/attendance', async (req, res) => {
                       cleanPhone = '92' + cleanPhone.substring(1);
                     }
                     const jid = `${cleanPhone}@s.whatsapp.net`;
-                    console.log(`Attempting to send WhatsApp message to JID: ${jid} for student: ${student.name}`);
                     await sock.sendMessage(jid, {
                       text: `Notice from MyAcademy: ${student.name} has been marked absent today (${date}). Please contact the administration if you have any questions.`
                     });
-                    console.log(`WhatsApp absence alert sent to ${student.name} (${cleanPhone})`);
                   } catch (err) {
-                    console.error(`Failed to send WhatsApp alert to ${student.name}:`, err.message);
+                    reportError(err, 'whatsapp_alert_failed', req);
                   }
-                } else {
-                  console.warn(`No phone number recorded for student: ${student.name}`);
                 }
               }
-            })().catch((err) => console.error('Background WhatsApp alert loop error:', err));
+            })().catch((err) => reportError(err, 'whatsapp_alert_loop_failed', req));
           } else {
             console.log(`Teacher ${teacherId} does not have an active WhatsApp session linked. Skipping absence alerts.`);
           }
         } catch (helperErr) {
-          console.error('Graceful WhatsApp session helper bypass error:', helperErr.message);
+          reportError(helperErr, 'graceful_whatsapp_session_helper_bypass_error', req);
         }
       } else {
         console.log('No students marked Absent in this submission. Skipping alerts.');
@@ -352,7 +263,7 @@ router.post('/attendance', async (req, res) => {
 
     res.status(200).json({ message: 'Attendance saved successfully.' });
   } catch (error) {
-    console.error('Save attendance error:', error);
+    reportError(error, 'save_attendance_error', req);
     res.status(500).json({ message: 'Server error saving attendance.' });
   }
 });
@@ -374,7 +285,7 @@ router.get('/attendance-dates', async (req, res) => {
 
     res.json(formattedDates);
   } catch (error) {
-    console.error('Fetch attendance dates error:', error);
+    reportError(error, 'fetch_attendance_dates_error', req);
     res.status(500).json({ message: 'Server error loading calendar indicator dots.' });
   }
 });
@@ -402,7 +313,7 @@ router.get('/fee', async (req, res) => {
     const students = await Student.find({
       assignedTeacher: teacherId,
       enrollmentDate: { $lte: endOfPeriod }
-    }).sort({ name: 1 });
+    }, privateFeeFields).sort({ name: 1 });
 
     // Fetch fee payment records for this month/year
     const feePayments = await FeePayment.find({
@@ -420,12 +331,12 @@ router.get('/fee', async (req, res) => {
       _id: s._id,
       name: s.name,
       rollNumber: s.rollNumber,
-      status: paymentMap[s._id.toString()] || 'pending'
+      status: automaticallyPaid(s, targetMonth, targetYear) ? 'submitted' : paymentMap[s._id.toString()] || 'pending'
     }));
 
     res.json(studentList);
   } catch (error) {
-    console.error('Fetch fees error:', error);
+    reportError(error, 'fetch_fees_error', req);
     res.status(500).json({ message: 'Server error loading fee management roster.' });
   }
 });
@@ -437,7 +348,7 @@ router.get('/fee', async (req, res) => {
 router.post('/fee/pay', async (req, res) => {
   try {
     const { studentId, month, year } = req.body;
-    if (!studentId || month === undefined || !year) {
+    if (!objectId(studentId) || !integer(month, 0, 11) || !integer(year, 1000, 9999)) {
       return res.status(400).json({ message: 'Student ID, month, and year are required.' });
     }
 
@@ -446,7 +357,7 @@ router.post('/fee/pay', async (req, res) => {
     const targetYear = parseInt(year);
 
     // Verify student exists and is assigned to this teacher
-    const student = await Student.findOne({ _id: studentId, assignedTeacher: teacherId });
+    const student = await Student.findOne({ _id: studentId, assignedTeacher: teacherId }, privateFeeFields);
     if (!student) {
       return res.status(404).json({ message: 'Student not found or not assigned to this teacher.' });
     }
@@ -455,6 +366,11 @@ router.post('/fee/pay', async (req, res) => {
     const paymentPeriodEnd = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
     if (student.enrollmentDate > paymentPeriodEnd) {
       return res.status(400).json({ message: 'Cannot mark fee as paid for a month before the student\'s enrollment.' });
+    }
+
+    // An automatic status must never create a fictional cash receipt.
+    if (automaticallyPaid(student, targetMonth, targetYear)) {
+      return res.json({ message: 'Fee marked as paid successfully.' });
     }
 
     // Upsert FeePayment status
@@ -466,7 +382,7 @@ router.post('/fee/pay', async (req, res) => {
 
     res.json({ message: 'Fee marked as paid successfully.', payment });
   } catch (error) {
-    console.error('Save fee payment error:', error);
+    reportError(error, 'save_fee_payment_error', req);
     res.status(500).json({ message: 'Server error updating fee status.' });
   }
 });
@@ -481,7 +397,7 @@ router.get('/stats/students', async (req, res) => {
     const students = await Student.find({ assignedTeacher: teacherId }).sort({ name: 1 });
     res.json(students);
   } catch (error) {
-    console.error('Fetch stats students error:', error);
+    reportError(error, 'fetch_stats_students_error', req);
     res.status(500).json({ message: 'Server error loading student list.' });
   }
 });
@@ -501,7 +417,7 @@ router.get('/stats/overview', async (req, res) => {
     const teacherId = req.userId;
 
     // Verify student is assigned to this teacher
-    const student = await Student.findOne({ _id: studentId, assignedTeacher: teacherId });
+    const student = await Student.findOne({ _id: studentId, assignedTeacher: teacherId }, privateFeeFields);
     if (!student) {
       return res.status(404).json({ message: 'Student not found or not assigned to you.' });
     }
@@ -526,8 +442,7 @@ router.get('/stats/overview', async (req, res) => {
     const summaries = await studentAttendanceSummaries([student], period);
 
     // Fetch Fee Status for the specified month/year or the current month as default
-    let feeMonth = new Date().getMonth();
-    let feeYear = new Date().getFullYear();
+    let { month: feeMonth, year: feeYear } = currentBillingPeriod();
     if (month !== undefined && year !== undefined) {
       feeMonth = parseInt(month);
       feeYear = parseInt(year);
@@ -539,7 +454,7 @@ router.get('/stats/overview', async (req, res) => {
       year: feeYear
     });
 
-    const feeStatus = feePayment ? feePayment.status : 'pending';
+    const feeStatus = automaticallyPaid(student, feeMonth, feeYear) ? 'submitted' : feePayment ? feePayment.status : 'pending';
 
     res.json({
       studentName: student.name,
@@ -549,7 +464,7 @@ router.get('/stats/overview', async (req, res) => {
       feeStatus
     });
   } catch (error) {
-    console.error('Fetch stats overview error:', error);
+    reportError(error, 'fetch_stats_overview_error', req);
     res.status(500).json({ message: 'Server error calculating student stats.' });
   }
 });
@@ -581,7 +496,7 @@ router.get('/stats/class', async (req, res) => {
     const students = await Student.find({
       assignedTeacher: teacherId,
       enrollmentDate: { $lt: period.end }
-    }).sort({ name: 1 });
+    }, privateFeeFields).sort({ name: 1 });
 
     // Use the same student history and enrollment rules as the individual profile.
     const summaries = await studentAttendanceSummaries(students, period);
@@ -604,12 +519,12 @@ router.get('/stats/class', async (req, res) => {
       name: s.name,
       rollNumber: s.rollNumber,
       ...summaries.get(s._id.toString()),
-      feeStatus: feeMap[s._id.toString()] || 'pending'
+      feeStatus: automaticallyPaid(s, targetMonth, targetYear) ? 'submitted' : feeMap[s._id.toString()] || 'pending'
     }));
 
     res.json(classOverview);
   } catch (error) {
-    console.error('Fetch class stats error:', error);
+    reportError(error, 'fetch_class_stats_error', req);
     res.status(500).json({ message: 'Server error generating class stats overview.' });
   }
 });

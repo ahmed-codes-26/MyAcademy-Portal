@@ -34,5 +34,6 @@ const feePaymentSchema = new mongoose.Schema(
 
 // Compound unique index to ensure one fee status record per student per billing cycle
 feePaymentSchema.index({ student: 1, month: 1, year: 1 }, { unique: true });
+feePaymentSchema.index({ teacher: 1, year: 1, month: 1 });
 
 module.exports = mongoose.model('FeePayment', feePaymentSchema);

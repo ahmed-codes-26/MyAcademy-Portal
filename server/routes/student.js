@@ -1,10 +1,15 @@
+const { reportError } = require('../utils/logger');
 const express = require('express');
 const auth = require('../middleware/auth');
 const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
 const FeePayment = require('../models/FeePayment');
+const { privateFeeFields, automaticallyPaid, currentBillingPeriod } = require('../utils/feePolicy');
 const Note = require('../models/Note');
 const { attendancePercentage } = require('../utils/attendanceStats');
+const { integer } = require('../middleware/validation');
+const { classVariants } = require('../utils/noteAccess');
+const studentChartWindow = require('../utils/studentChartWindow');
 
 const router = express.Router();
 
@@ -20,33 +25,41 @@ router.use((req, res, next) => {
 /**
  * GET /api/student/dashboard
  * Return aggregated dashboard analytics, attendance donut stats, fee status,
- * trend lines, study notes, and notice board for the logged-in student.
+ * trend lines and class study notes for the logged-in student.
  */
 router.get('/dashboard', async (req, res) => {
   try {
     const studentId = req.userId;
 
     // Load full student document with assigned teacher details
-    const student = await Student.findById(studentId).populate('assignedTeacher', 'name email batchName');
+    const student = await Student.findById(studentId, privateFeeFields).populate('assignedTeacher', 'name email batchName');
     if (!student) {
       return res.status(404).json({ message: 'Student profile not found.' });
     }
 
     const { viewMode = 'all', month, year } = req.query;
-    const currentYear = year ? parseInt(year, 10) : new Date().getFullYear();
-    const currentMonth = month ? parseInt(month, 10) : new Date().getMonth() + 1;
+    if (!['all', 'monthly'].includes(viewMode) ||
+        (month !== undefined && !integer(month, 1, 12)) ||
+        (year !== undefined && !integer(year, 1000, 9999))) {
+      return res.status(400).json({ message: 'Invalid dashboard period.' });
+    }
+    const billingPeriod = currentBillingPeriod();
+    const currentYear = year ? parseInt(year, 10) : billingPeriod.year;
+    const currentMonth = month ? parseInt(month, 10) : billingPeriod.month + 1;
 
     // Build Attendance query filter
-    let attendanceFilter = { student: studentId };
+    const enrollmentStart = new Date(student.enrollmentDate);
+    enrollmentStart.setUTCHours(0, 0, 0, 0);
+    let attendanceFilter = { student: studentId, date: { $gte: enrollmentStart } };
 
     if (viewMode === 'monthly') {
       const startOfMonth = new Date(Date.UTC(currentYear, currentMonth - 1, 1, 0, 0, 0));
       const endOfMonth = new Date(Date.UTC(currentYear, currentMonth, 0, 23, 59, 59, 999));
-      attendanceFilter.date = { $gte: startOfMonth, $lte: endOfMonth };
+      attendanceFilter.date = { $gte: enrollmentStart > startOfMonth ? enrollmentStart : startOfMonth, $lte: endOfMonth };
     }
 
     // 1. Attendance Summary Metrics & Streak Calculation
-    const attendanceRecords = await Attendance.find(attendanceFilter).sort({ date: 1 });
+    const attendanceRecords = await Attendance.find(attendanceFilter).select('date status').sort({ date: 1 }).lean();
     let presents = 0;
     let absents = 0;
     let leaves = 0;
@@ -62,7 +75,8 @@ router.get('/dashboard', async (req, res) => {
     const percentage = attendancePercentage(presents, absents);
 
     // Calculate consecutive presence streak (most recent first)
-    const allRecordsForStreak = await Attendance.find({ student: studentId }).sort({ date: -1 });
+    const allRecordsForStreak = viewMode === 'all' ? [...attendanceRecords].reverse() :
+      await Attendance.find({ student: studentId, date: { $gte: enrollmentStart } }).select('status').sort({ date: -1 }).lean();
     let streak = 0;
     for (const rec of allRecordsForStreak) {
       const statusLower = (rec.status || '').toLowerCase();
@@ -77,18 +91,26 @@ router.get('/dashboard', async (req, res) => {
     // Check FeePayment collection for specific month record, or fall back to student model
     const feeRecord = await FeePayment.findOne({
       student: studentId,
-      month: currentMonth,
+      month: currentMonth - 1, // Dashboard months are 1–12; FeePayment stores 0–11.
       year: currentYear,
     });
 
-    let feeAmount = student.fees || 0;
+    const feeAmount = student.fees || 0;
     let feePaid = student.feesPaid || 0;
     let feeStatus = feePaid >= feeAmount && feeAmount > 0 ? 'PAID' : 'PENDING';
-    let lastPaidDate = feeRecord ? feeRecord.paidAt : student.updatedAt;
+    let lastPaidDate = student.updatedAt;
 
     if (feeRecord) {
-      feeStatus = feeRecord.status.toUpperCase();
-      feeAmount = feeRecord.amount;
+      const paid = feeRecord.status === 'submitted';
+      feeStatus = paid ? 'PAID' : 'PENDING';
+      feePaid = paid ? feeAmount : 0;
+      lastPaidDate = paid ? feeRecord.updatedAt : null;
+    }
+
+    if (automaticallyPaid(student, currentMonth - 1, currentYear)) {
+      feeStatus = 'PAID';
+      feePaid = feeAmount;
+      lastPaidDate = feeRecord?.status === 'submitted' ? feeRecord.updatedAt : null;
     }
 
     // 3. Attendance Trend Data (grouped by date)
@@ -100,9 +122,10 @@ router.get('/dashboard', async (req, res) => {
       }
     });
 
-    // Transform to chart points (cumulative or daily percentage)
+    // Preserve the cumulative rate, but send only the fifteen-day display window.
     let cumulativePresents = 0;
     let cumulativeAbsents = 0;
+    const chartWindow = studentChartWindow(viewMode, currentMonth, currentYear);
     const attendanceTrends = Object.values(trendMap).map((point) => {
       if ((point.status || '').toLowerCase() === 'present') cumulativePresents++;
       if ((point.status || '').toLowerCase() === 'absent') cumulativeAbsents++;
@@ -110,53 +133,18 @@ router.get('/dashboard', async (req, res) => {
         date: point.date,
         percentage: attendancePercentage(cumulativePresents, cumulativeAbsents),
       };
-    });
+    }).filter((point) => chartWindow && point.date >= chartWindow.start && point.date <= chartWindow.end);
 
-    // 4. Recent Study Notes — strict class-level filtering
-    const rawClass = (student.studentClass || '').trim();
-    const classDigits = rawClass.replace(/\D/g, '');
-
-    // Build an array of possible class representations to match against
-    // e.g. studentClass "9" or "09" should match notes tagged "9", "09", "9th"
-    const classVariants = [];
-    if (classDigits) {
-      classVariants.push(classDigits);                             // "9" or "09"
-      classVariants.push(String(parseInt(classDigits, 10)));       // normalized without leading zero
-      classVariants.push(`${parseInt(classDigits, 10)}th`);        // "9th"
-    }
-    if (rawClass && !classVariants.includes(rawClass)) {
-      classVariants.push(rawClass);
-    }
+    // 4. Complete study library — strict class-level filtering, grouped by subject in the UI.
+    const studentClasses = classVariants(student.studentClass);
 
     let recentNotes = [];
-    if (classVariants.length > 0) {
-      recentNotes = await Note.find({ class: { $in: classVariants } })
+    if (studentClasses.length > 0) {
+      recentNotes = await Note.find({ class: { $in: studentClasses } })
+        .select('-fileUrl -publicId')
         .populate('uploadedBy', 'name')
-        .sort({ createdAt: -1 })
-        .limit(6);
+        .sort({ createdAt: -1 }).lean();
     }
-
-    // 5. Academy Notice Board Announcements
-    const notices = [
-      {
-        id: '1',
-        date: 'Oct 15, 2026',
-        title: 'Mid-Term Exam Schedule Released',
-        description: 'The schedule for the upcoming mid-term examinations for all classes is now available on the portal.',
-      },
-      {
-        id: '2',
-        date: 'Oct 10, 2026',
-        title: 'Science Fair Project Submissions',
-        description: 'Reminder to submit your Science Fair project proposals to your respective class teachers by Friday.',
-      },
-      {
-        id: '3',
-        date: 'Oct 02, 2026',
-        title: 'Holiday Announcement',
-        description: 'The academy will remain closed on Oct 4th due to local public holidays.',
-      },
-    ];
 
     res.json({
       student: {
@@ -190,11 +178,11 @@ router.get('/dashboard', async (req, res) => {
         lastPaidDate,
       },
       attendanceTrends,
+      attendanceTrendWindow: chartWindow,
       recentNotes,
-      notices,
     });
   } catch (error) {
-    console.error('Student dashboard error:', error);
+    reportError(error, 'student_dashboard_error', req);
     res.status(500).json({ message: 'Server error loading student dashboard.' });
   }
 });

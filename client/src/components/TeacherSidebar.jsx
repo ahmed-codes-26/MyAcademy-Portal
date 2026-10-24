@@ -1,6 +1,8 @@
+import profileImage from '../utils/profileImage';
+import logoUrl from '../assets/logo.svg';
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import { LayoutDashboard, CalendarCheck, CreditCard, BarChart3, FileText, LogOut, MessageSquare, X } from 'lucide-react';
 
 export default function TeacherSidebar() {
@@ -32,6 +34,7 @@ export default function TeacherSidebar() {
     { to: '/teacher/fee', label: 'Fee', icon: CreditCard },
     { to: '/teacher/stats', label: 'Attendance Stats', icon: BarChart3 },
     { to: '/teacher/notes', label: 'Notes', icon: FileText },
+    { to: '/teacher/test-notes', label: 'Test notes', icon: FileText },
     { to: '/teacher/whatsapp', label: 'WhatsApp Setup', icon: MessageSquare },
   ];
 
@@ -60,9 +63,8 @@ export default function TeacherSidebar() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
               <img
-                src="/logo-42.webp"
-                srcSet="/logo-42.webp 1x, /logo-84.webp 2x"
-                width={42}
+                src={logoUrl}
+              width={42}
                 height={42}
                 alt="MyAcademy Logo"
                 className="w-full h-full object-cover rounded-full"
@@ -114,7 +116,7 @@ export default function TeacherSidebar() {
           <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
             {admin?.profilePicture ? (
               <img
-                src={admin.profilePicture}
+                src={profileImage(admin.profilePicture, 40)}
                 width={40}
                 height={40}
                 alt={admin.name}

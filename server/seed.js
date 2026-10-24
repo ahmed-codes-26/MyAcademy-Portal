@@ -1,3 +1,4 @@
+const { reportError } = require('./utils/logger');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const mongoose = require('mongoose');
@@ -5,13 +6,17 @@ const Admin = require('./models/Admin');
 const Teacher = require('./models/Teacher');
 const Student = require('./models/Student');
 const Attendance = require('./models/Attendance');
-const Counter = require('./models/Counter');
 const PasswordRequest = require('./models/PasswordRequest');
 const FeePayment = require('./models/FeePayment');
 const connectDB = require('./config/db');
 
 async function seed() {
   try {
+    if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true') {
+      console.error('Demo seeding is disabled. Use a disposable development database and explicitly set ALLOW_DEMO_SEED=true.');
+      process.exitCode = 1;
+      return;
+    }
     await connectDB();
     console.log('Connected to MongoDB for seeding MyAcademy Portal database...');
 
@@ -23,13 +28,12 @@ async function seed() {
       await Admin.create({
         name: 'Admin User',
         email: 'admin@myacademy.com',
-        password: 'admin123',
+        password: process.env.SEED_ADMIN_PASSWORD || require('crypto').randomBytes(24).toString('base64url'),
         phone: '0300-0000000',
         profilePicture: '',
       });
       console.log('✅ Default Admin account created:');
       console.log('   Email: admin@myacademy.com');
-      console.log('   Password: admin123');
     }
 
     // 2. Seed Default Teacher
@@ -42,31 +46,14 @@ async function seed() {
         email: 'teacher@myacademy.com',
         phone: '0321-9876543',
         batchName: 'Computer Science',
-        password: 'teacher123',
+        password: process.env.SEED_TEACHER_PASSWORD || require('crypto').randomBytes(24).toString('base64url'),
         profilePicture: '',
       });
       console.log('✅ Default Teacher account created:');
       console.log('   Email: teacher@myacademy.com');
-      console.log('   Password: teacher123');
     }
 
-    // Clear and reset Student enrollment counters for 2026
-    const year = 2026;
-    await Counter.deleteOne({ _id: `enrollment_${year}` });
-    await Counter.create({ _id: `enrollment_${year}`, seq: 0 });
-
-    // Helper to generate roll number sequentially
-    const getNextRollNumber = async (studentClass) => {
-      const session = String(year % 100).padStart(2, '0');
-      const cls = String(studentClass).padStart(2, '0');
-      const counter = await Counter.findOneAndUpdate(
-        { _id: `enrollment_${year}` },
-        { $inc: { seq: 1 } },
-        { new: true }
-      );
-      const enrollment = String(counter.seq).padStart(2, '0');
-      return `MA${session}${cls}${enrollment}`;
-    };
+    const { generateRollNumber } = require('./utils/rollNumbers');
 
     // 3. Clear existing students and attendance for fresh mock data
     await Student.deleteMany({});
@@ -85,12 +72,12 @@ async function seed() {
 
     const seededStudents = [];
     for (const studData of mockStudents) {
-      const rollNumber = await getNextRollNumber(studData.studentClass);
+      const rollNumber = await generateRollNumber(studData.studentClass, teacher._id, 2026);
       const s = await Student.create({
         ...studData,
         rollNumber,
         assignedTeacher: teacher._id,
-        password: 'student123',
+        password: process.env.SEED_STUDENT_PASSWORD || require('crypto').randomBytes(24).toString('base64url'),
       });
       seededStudents.push(s);
     }
@@ -140,7 +127,7 @@ async function seed() {
     await mongoose.disconnect();
     process.exit(0);
   } catch (error) {
-    console.error('Seed error:', error);
+    reportError(error, 'seed_error');
     process.exit(1);
   }
 }

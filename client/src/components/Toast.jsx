@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { CheckCircle, XCircle, Info, AlertTriangle } from 'lucide-react';
 
-const ToastContext = createContext(null);
+import { ToastContext } from '../context/toast';
 
 const ICONS = {
   success: CheckCircle,
@@ -39,23 +39,27 @@ export function ToastProvider({ children }) {
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }, 200);
     }, duration);
+    return id;
   }, []);
+
+  const dismiss = useCallback((id) => setToasts((prev) => prev.filter((toast) => toast.id !== id)), []);
 
   const toast = useMemo(
     () => ({
       success: (msg) => addToast(msg, 'success'),
       error: (msg) => addToast(msg, 'error'),
       info: (msg) => addToast(msg, 'info'),
-      warning: (msg) => addToast(msg, 'warning'),
+      warning: (msg, duration) => addToast(msg, 'warning', duration),
+      dismiss,
     }),
-    [addToast]
+    [addToast, dismiss]
   );
 
   return (
     <ToastContext.Provider value={toast}>
       {children}
       {/* Toast container */}
-      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+      <div aria-live="polite" className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
         {toasts.map((t) => {
           const Icon = ICONS[t.type];
           return (
@@ -71,12 +75,4 @@ export function ToastProvider({ children }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
 }

@@ -54,3 +54,4 @@ Thumbs.db
 **/.vite/
 .cache/
 .eslintcache
+server/backups/

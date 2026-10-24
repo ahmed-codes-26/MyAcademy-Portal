@@ -1,3 +1,4 @@
+const { reportError } = require('./logger');
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const { DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
@@ -14,7 +15,11 @@ const reconnectTimers = {};
 const isInitializing = {};
 
 // Create a Pino logger locked to 'error' level to avoid terminal flooding
-const baileysLogger = pino({ level: 'error' });
+const baileysLogger = pino({ level: 'error',
+  redact: ['creds', 'keys', 'qr', 'phone', 'token', '*.creds', '*.keys', '*.qr', '*.phone', '*.token'],
+  serializers: { err: (error) => ({ type: error?.name,
+    code: typeof error?.code === 'number' ? error.code : undefined }) },
+});
 
 /**
  * Initialize a WhatsApp session for a specific teacher
@@ -80,7 +85,7 @@ const initWhatsAppSession = async (teacherId) => {
           qrCodes[teacherIdStr] = await QRCode.toDataURL(qr);
           sessionStatuses[teacherIdStr] = 'disconnected'; // Ready for QR scan
         } catch (err) {
-          console.error(`Error generating QR code for teacher ${teacherIdStr}:`, err);
+          reportError(err, 'error_generating_qr_code_for_teacher');
         }
       }
 
@@ -95,7 +100,7 @@ const initWhatsAppSession = async (teacherId) => {
         const jid = sock.user?.id || '';
         const rawPhone = jid.split(':')[0] || jid.split('@')[0];
         connectedPhones[teacherIdStr] = rawPhone;
-        console.log(`WhatsApp session opened successfully for teacher ${teacherIdStr} (${rawPhone})`);
+        console.log(`WhatsApp session opened successfully for teacher ${teacherIdStr}`);
       }
 
       if (connection === 'close') {
@@ -123,7 +128,7 @@ const initWhatsAppSession = async (teacherId) => {
             await WhatsAppSession.deleteOne({ teacherId: teacherIdStr });
             console.log(`Cleaned up logged out MongoDB session for teacher ${teacherIdStr}`);
           } catch (dbErr) {
-            console.error(`Failed to delete session record for teacher ${teacherIdStr}:`, dbErr.message);
+            reportError(dbErr, 'failed_to_delete_session_record_for_teacher');
           }
         } else {
           // Automatic reconnection for transient disconnects (428, 408, 515, etc.)
@@ -133,7 +138,7 @@ const initWhatsAppSession = async (teacherId) => {
           reconnectTimers[teacherIdStr] = setTimeout(() => {
             delete reconnectTimers[teacherIdStr];
             initWhatsAppSession(teacherIdStr).catch((err) => {
-              console.error(`Reconnection failed for teacher ${teacherIdStr}:`, err.message);
+              reportError(err, 'reconnection_failed_for_teacher');
             });
           }, 3000);
         }
@@ -142,7 +147,7 @@ const initWhatsAppSession = async (teacherId) => {
 
     return sock;
   } catch (error) {
-    console.error(`Failed to initialize WhatsApp session for teacher ${teacherIdStr}:`, error);
+    reportError(error, 'failed_to_initialize_whatsapp_session_for_teacher');
     sessionStatuses[teacherIdStr] = 'disconnected';
     throw error;
   } finally {
@@ -164,7 +169,7 @@ const getSessionStatus = (teacherId) => {
     !reconnectTimers[teacherIdStr]
   ) {
     initWhatsAppSession(teacherIdStr).catch((err) => {
-      console.error(`Lazy init failed for teacher ${teacherIdStr}:`, err.message);
+      reportError(err, 'lazy_init_failed_for_teacher');
     });
   }
 
@@ -193,7 +198,7 @@ const disconnectSession = async (teacherId) => {
       await sock.logout();
       sock.end(undefined);
     } catch (err) {
-      console.warn(`Error logging out Baileys socket for teacher ${teacherIdStr}:`, err.message);
+      reportError(err, 'error_logging_out_baileys_socket_for_teacher');
       try {
         sock.end(undefined);
       } catch {}

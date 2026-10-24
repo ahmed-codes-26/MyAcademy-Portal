@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
-import { useToast } from '../components/Toast';
+import { useToast } from '../context/toast';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Search, CheckCircle2, XCircle, ShieldAlert, Loader2, HelpCircle, Eye, EyeOff, CalendarDays } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, ShieldAlert, Loader2, Eye, EyeOff, CalendarDays } from 'lucide-react';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -136,9 +136,6 @@ export default function TeacherStatsPage() {
             >
               {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
               <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
-            </button>
-            <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
-              <HelpCircle className="w-5 h-5" />
             </button>
           </div>
         </header>
@@ -336,7 +333,7 @@ export default function TeacherStatsPage() {
                         : 'bg-rose-50 text-rose-700 border border-rose-200'
                     }`}
                   >
-                    {studentStats.feeStatus === 'submitted' ? 'SUBMITTED' : 'PENDING'}
+                    {studentStats.feeStatus === 'submitted' ? 'PAID' : 'PENDING'}
                   </span>
                 </div>
 
@@ -467,7 +464,7 @@ export default function TeacherStatsPage() {
                                     : 'bg-rose-50 text-rose-700 border border-rose-100'
                                 }`}
                               >
-                                {isPaid ? 'Submitted' : 'Pending'}
+                                {isPaid ? 'Paid' : 'Pending'}
                               </span>
                             </td>
                           </tr>

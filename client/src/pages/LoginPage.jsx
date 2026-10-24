@@ -1,7 +1,8 @@
+import logoUrl from '../assets/logo.svg';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
+import { useAuth } from '../context/auth';
+import { useToast } from '../context/toast';
 import { Mail, Lock, ArrowLeft, Loader2, User, School, ShieldCheck, Send, Eye, EyeOff } from 'lucide-react';
 import api from '../api/axios';
 
@@ -68,9 +69,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center text-center mb-6">
           <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white p-2 shadow-md border border-slate-200/80 mb-3 flex items-center justify-center shrink-0">
             <img
-              src="/logo-142.webp"
-              srcSet="/logo-110.webp 110w, /logo-142.webp 142w, /logo-220.webp 220w, /logo-284.webp 284w"
-              sizes="(min-width: 640px) 142px, 110px"
+              src={logoUrl}
               width={142}
               height={142}
               alt="MyAcademy Logo"
@@ -156,7 +155,7 @@ export default function LoginPage() {
                     required
                     placeholder={
                       role === 'student'
-                        ? 'e.g. MA260906'
+                        ? 'e.g. MA2609B01-00'
                         : role === 'teacher'
                         ? 'teacher@myacademy.com'
                         : 'admin@myacademy.com'
@@ -239,7 +238,7 @@ export default function LoginPage() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  placeholder="e.g. MA260906 or your email"
+                  placeholder="e.g. MA2609B01-00 or your email"
                   className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
                 />
               </div>

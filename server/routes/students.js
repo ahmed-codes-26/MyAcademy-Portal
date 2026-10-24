@@ -1,60 +1,32 @@
+const { reportError } = require('../utils/logger');
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const multer = require('multer');
+const requireRole = require('../middleware/roles');
+const { profileUpload } = require('../middleware/uploads');
+const { bodyFields, studentFields, validateId } = require('../middleware/validation');
+const Teacher = require('../models/Teacher');
 const { uploadStreamToCloudinary } = require('../config/cloudinary');
 const auth = require('../middleware/auth');
 const Student = require('../models/Student');
-const Counter = require('../models/Counter');
+const { generateRollNumber } = require('../utils/rollNumbers');
+const { privateFeeFields, setFeePolicy, adminStudent } = require('../utils/feePolicy');
 
 const router = express.Router();
 
-// Multer memory storage for student profile pictures
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'), false);
-    }
-  },
-});
-
 // All routes require authentication
-router.use(auth);
-
-/**
- * Generate a unique roll number for a student.
- * Formula: MA + Session(2 digits) + Class(2 digits) + Enrollment(2 digits)
- * Example: MA260906 (Session 2026, Class 09, 6th enrollment)
- */
-async function generateRollNumber(studentClass) {
-  const year = new Date().getFullYear();
-  const session = String(year % 100).padStart(2, '0');
-  const cls = String(studentClass).padStart(2, '0');
-
-  // Atomically increment the enrollment counter for this session year
-  const counter = await Counter.findOneAndUpdate(
-    { _id: `enrollment_${year}` },
-    { $inc: { seq: 1 } },
-    { upsert: true, new: true }
-  );
-
-  const enrollment = String(counter.seq).padStart(2, '0');
-  return `MA${session}${cls}${enrollment}`;
-}
+router.use(auth, requireRole('admin'));
+router.param('id', validateId);
 
 // GET /api/students — List all students (populated with teacher info)
 router.get('/', async (req, res) => {
   try {
     const students = await Student.find()
+      .select(privateFeeFields)
       .populate('assignedTeacher', 'name batchName')
       .sort({ createdAt: -1 });
-    res.json(students);
+    res.json(students.map(adminStudent));
   } catch (error) {
-    console.error('Get students error:', error);
+    reportError(error, 'get_students_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -62,7 +34,8 @@ router.get('/', async (req, res) => {
 // POST /api/students — Create a student with auto-generated roll number & optional profile picture
 router.post(
   '/',
-  upload.single('profilePicture'),
+  ...profileUpload,
+  bodyFields(studentFields),
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('studentClass')
@@ -85,18 +58,25 @@ router.post(
 
       const { name, studentClass, assignedTeacher, fees, feesPaid, phone, password, enrollmentDate } = req.body;
 
+      if (!(await Teacher.exists({ _id: assignedTeacher }))) {
+        return res.status(400).json({ message: 'Assigned teacher does not exist.' });
+      }
+      if (Number(feesPaid || 0) > Number(fees)) {
+        return res.status(400).json({ message: 'Fees paid cannot exceed total fees.' });
+      }
+
       // Auto-generate roll number
-      const rollNumber = await generateRollNumber(studentClass);
+      const rollNumber = await generateRollNumber(studentClass, assignedTeacher);
 
       let profilePictureUrl = '';
       if (req.file) {
         try {
           const result = await uploadStreamToCloudinary(req.file.buffer, {
-            folder: 'myacademy_students',
+            folder: 'myacademy/profiles/students',
           });
           profilePictureUrl = result.secure_url;
         } catch (uploadError) {
-          console.error('Cloudinary student image upload failed:', uploadError);
+          reportError(uploadError, 'cloudinary_student_image_upload_failed', req);
           return res.status(500).json({ message: 'Failed to upload profile picture to cloud storage.' });
         }
       }
@@ -118,14 +98,16 @@ router.post(
         studentData.enrollmentDate = new Date(enrollmentDate);
       }
 
-      const student = await Student.create(studentData);
+      const student = new Student(studentData);
+      setFeePolicy(student, req.body.feeExempt);
+      await student.save();
 
       // Populate teacher info before returning
       await student.populate('assignedTeacher', 'name batchName');
 
-      res.status(201).json(student);
+      res.status(201).json(adminStudent(student));
     } catch (error) {
-      console.error('Create student error:', error);
+      reportError(error, 'create_student_error', req);
       if (error.code === 11000) {
         return res.status(400).json({ message: 'Roll number conflict. Please try again.' });
       }
@@ -137,7 +119,8 @@ router.post(
 // PUT /api/students/:id — Update a student (roll number is immutable)
 router.put(
   '/:id',
-  upload.single('profilePicture'),
+  ...profileUpload,
+  bodyFields(studentFields),
   [
     body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
     body('studentClass')
@@ -157,14 +140,19 @@ router.put(
         return res.status(400).json({ message: errors.array()[0].msg });
       }
 
-      const student = await Student.findById(req.params.id);
+      const student = await Student.findById(req.params.id, privateFeeFields);
       if (!student) {
         return res.status(404).json({ message: 'Student not found.' });
       }
 
       const { name, studentClass, assignedTeacher, fees, feesPaid, phone, password, enrollmentDate } = req.body;
 
+      if (assignedTeacher && !(await Teacher.exists({ _id: assignedTeacher }))) {
+        return res.status(400).json({ message: 'Assigned teacher does not exist.' });
+      }
+
       if (name) student.name = name;
+      setFeePolicy(student, req.body.feeExempt);
       if (studentClass) student.studentClass = studentClass;
       if (assignedTeacher) student.assignedTeacher = assignedTeacher;
       if (fees !== undefined) student.fees = Number(fees);
@@ -172,15 +160,18 @@ router.put(
       if (phone) student.phone = phone;
       if (password) student.password = password;
       if (enrollmentDate) student.enrollmentDate = new Date(enrollmentDate);
+      if (student.feesPaid > student.fees) {
+        return res.status(400).json({ message: 'Fees paid cannot exceed total fees.' });
+      }
 
       if (req.file) {
         try {
           const result = await uploadStreamToCloudinary(req.file.buffer, {
-            folder: 'myacademy_students',
+            folder: 'myacademy/profiles/students',
           });
           student.profilePicture = result.secure_url;
         } catch (uploadError) {
-          console.error('Cloudinary student image update failed:', uploadError);
+          reportError(uploadError, 'cloudinary_student_image_update_failed', req);
           return res.status(500).json({ message: 'Failed to upload updated profile picture.' });
         }
       }
@@ -188,9 +179,9 @@ router.put(
       await student.save();
       await student.populate('assignedTeacher', 'name batchName');
 
-      res.json(student);
+      res.json(adminStudent(student));
     } catch (error) {
-      console.error('Update student error:', error);
+      reportError(error, 'update_student_error', req);
       res.status(500).json({ message: 'Server error updating student.' });
     }
   }
@@ -205,7 +196,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({ message: 'Student deleted successfully.' });
   } catch (error) {
-    console.error('Delete student error:', error);
+    reportError(error, 'delete_student_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });

@@ -1,5 +1,7 @@
 const WhatsAppSession = require('../models/WhatsAppSession');
 const { initAuthCreds, BufferJSON } = require('@whiskeysockets/baileys');
+const { encryptCredential, decryptCredential } = require('./credentialEncryption');
+const { reportError } = require('./logger');
 
 /**
  * Custom MongoDB Auth State handler for Baileys WhatsApp sessions.
@@ -24,10 +26,11 @@ const useMongoDBAuthState = async (teacherId) => {
   let creds;
   if (session.creds) {
     try {
-      creds = JSON.parse(session.creds, BufferJSON.reviver);
+      creds = JSON.parse(decryptCredential(session.creds), BufferJSON.reviver);
     } catch (err) {
-      console.error(`Failed to parse WhatsApp creds for teacher ${teacherIdStr}, resetting:`, err.message);
-      creds = initAuthCreds();
+      reportError(err, 'whatsapp_credentials_unreadable');
+      // Do not reset a valid account because its encryption key was misconfigured.
+      throw new Error('WhatsApp credentials cannot be decrypted. Check WHATSAPP_AUTH_KEY.');
     }
   } else {
     creds = initAuthCreds();
@@ -51,9 +54,10 @@ const useMongoDBAuthState = async (teacherId) => {
 
               if (serialized) {
                 try {
-                  data[id] = JSON.parse(serialized, BufferJSON.reviver);
+                  data[id] = JSON.parse(decryptCredential(serialized), BufferJSON.reviver);
                 } catch (err) {
-                  console.error(`Failed to parse session key ${rawKey}:`, err.message);
+                  reportError(err, 'whatsapp_session_key_unreadable');
+                  throw new Error('WhatsApp session key cannot be decrypted.');
                 }
               }
             }
@@ -74,7 +78,7 @@ const useMongoDBAuthState = async (teacherId) => {
               const mongoField = `keys.${safeKey}`;
 
               if (value !== null && value !== undefined) {
-                updateFields[mongoField] = JSON.stringify(value, BufferJSON.replacer);
+                updateFields[mongoField] = encryptCredential(JSON.stringify(value, BufferJSON.replacer));
                 hasUpdates = true;
               } else {
                 unsetFields[mongoField] = '';
@@ -91,7 +95,8 @@ const useMongoDBAuthState = async (teacherId) => {
             try {
               await WhatsAppSession.updateOne({ teacherId: teacherIdStr }, updateOp);
             } catch (err) {
-              console.error(`Failed to save keys update in MongoDB for teacher ${teacherIdStr}:`, err.message);
+              reportError(err, 'whatsapp_session_key_save_failed');
+              throw err;
             }
           }
         },
@@ -99,13 +104,13 @@ const useMongoDBAuthState = async (teacherId) => {
     },
     saveCreds: async () => {
       try {
-        const serializedCreds = JSON.stringify(creds, BufferJSON.replacer);
+        const serializedCreds = encryptCredential(JSON.stringify(creds, BufferJSON.replacer));
         await WhatsAppSession.updateOne(
           { teacherId: teacherIdStr },
           { $set: { creds: serializedCreds } }
         );
       } catch (err) {
-        console.error(`Failed to save creds update in MongoDB for teacher ${teacherIdStr}:`, err.message);
+        reportError(err, 'whatsapp_credentials_save_failed');
       }
     },
   };

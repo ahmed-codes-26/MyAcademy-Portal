@@ -1,5 +1,6 @@
+import logoUrl from '../assets/logo.svg';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 import { User, LogOut } from 'lucide-react';
 
 export default function Navbar() {
@@ -13,14 +14,12 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40 w-full">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 min-h-16 py-2 flex flex-wrap sm:flex-nowrap gap-2 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2.5 sm:gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
             <img
-              src="/logo-42.webp"
-              srcSet="/logo-34.webp 34w, /logo-42.webp 42w, /logo-68.webp 68w, /logo-84.webp 84w"
-              sizes="(min-width: 640px) 42px, 34px"
+              src={logoUrl}
               width={42}
               height={42}
               alt="MyAcademy Logo"
@@ -33,7 +32,8 @@ export default function Navbar() {
         </div>
 
         {/* Right actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center justify-end w-full sm:w-auto gap-1.5 sm:gap-2">
+          <button onClick={() => navigate('/')} aria-label="Dashboard" className="p-2 text-xs sm:text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Home</button>
           <button
             id="nav-account-btn"
             onClick={() => navigate('/account')}

@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const Teacher = require('../models/Teacher');
 const Student = require('../models/Student');
+const { jwtSecret, jwtIssuer, jwtAudience } = require('../config/security');
+const { matchesCredentials } = require('../utils/tokens');
+const { objectId } = require('./validation');
+const { userLimiter } = require('./security');
 
 const auth = async (req, res, next) => {
   try {
@@ -12,10 +16,15 @@ const auth = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.SESSION_SECRET || 'myacademy_secret_fallback');
+    const decoded = jwt.verify(token, jwtSecret, {
+      algorithms: ['HS256'], issuer: jwtIssuer, audience: jwtAudience,
+    });
+    if (!decoded || !objectId(decoded.id) || !['admin', 'teacher', 'student'].includes(decoded.role)) {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
 
     let user;
-    const role = decoded.role || 'admin';
+    const role = decoded.role;
 
     if (role === 'admin') {
       user = await Admin.findById(decoded.id);
@@ -29,6 +38,10 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: `Access denied. ${role} not found.` });
     }
 
+    if (!matchesCredentials(user, decoded.credentialVersion)) {
+      return res.status(401).json({ message: 'Session expired. Please sign in again.' });
+    }
+
     req.user = user;
     req.userId = user._id;
     req.userRole = role;
@@ -39,9 +52,12 @@ const auth = async (req, res, next) => {
       req.adminId = user._id;
     }
 
-    next();
+    // Mounted teacher/WhatsApp routers can authenticate the same request twice.
+    if (req.securityRateLimited) return next();
+    req.securityRateLimited = true;
+    return userLimiter(req, res, next);
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
+    if (['JsonWebTokenError', 'NotBeforeError'].includes(error.name)) {
       return res.status(401).json({ message: 'Invalid token.' });
     }
     if (error.name === 'TokenExpiredError') {

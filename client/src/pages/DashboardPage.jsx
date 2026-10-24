@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '../components/Toast';
+import { useToast } from '../context/toast';
 import Navbar from '../components/Navbar';
 import PasswordRequestCard from '../components/PasswordRequestCard';
 import UserTable from '../components/UserTable';
@@ -209,57 +209,9 @@ export default function DashboardPage() {
           <p className="text-sm text-slate-500 mt-1">Manage your academy from one place</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* ---------- Password Requests Column ---------- */}
-          <section className="lg:col-span-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-amber-600 shrink-0" />
-                <h2 className="text-base font-semibold text-slate-900">Password Requests</h2>
-              </div>
-              {pendingRequests.length > 0 && (
-                <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full shrink-0">
-                  {pendingRequests.length} pending
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              {loadingRequests ? (
-                [...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-200 rounded-lg shrink-0" />
-                      <div className="flex-1 space-y-2 min-w-0">
-                        <div className="h-4 bg-slate-200 rounded w-32" />
-                        <div className="h-3 bg-slate-100 rounded w-24" />
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : pendingRequests.length === 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
-                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <KeyRound className="w-6 h-6 text-emerald-500" />
-                  </div>
-                  <p className="text-sm font-medium text-slate-600">All clear!</p>
-                  <p className="text-xs text-slate-400 mt-1">No pending password requests</p>
-                </div>
-              ) : (
-                pendingRequests.map((req) => (
-                  <PasswordRequestCard
-                    key={req._id}
-                    request={req}
-                    onResolve={handleResolveRequest}
-                    onDelete={handleDeleteRequest}
-                  />
-                ))
-              )}
-            </div>
-          </section>
-
+        <div className="space-y-6">
           {/* ---------- User Management Column ---------- */}
-          <section className="lg:col-span-8 min-w-0">
+          <section aria-label="User management" className="min-w-0">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
               {/* Header with toggle */}
               <div className="px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50/50">
@@ -347,6 +299,55 @@ export default function DashboardPage() {
               )}
             </div>
           </section>
+
+          {/* ---------- Password Requests ---------- */}
+          <section aria-labelledby="password-requests-heading" className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-amber-600 shrink-0" />
+                <h2 id="password-requests-heading" className="text-base font-semibold text-slate-900">Password Requests</h2>
+              </div>
+              {pendingRequests.length > 0 && (
+                <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full shrink-0">
+                  {pendingRequests.length} pending
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {loadingRequests ? (
+                [...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-slate-200 rounded-lg shrink-0" />
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="h-4 bg-slate-200 rounded w-32" />
+                        <div className="h-3 bg-slate-100 rounded w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : pendingRequests.length === 0 ? (
+                <div className="md:col-span-2 xl:col-span-3 bg-slate-50 rounded-xl border border-slate-200 p-5 text-center">
+                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <KeyRound className="w-6 h-6 text-emerald-500" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-600">All clear!</p>
+                  <p className="text-xs text-slate-400 mt-1">No pending password requests</p>
+                </div>
+              ) : (
+                pendingRequests.map((req) => (
+                  <PasswordRequestCard
+                    key={req._id}
+                    request={req}
+                    onResolve={handleResolveRequest}
+                    onDelete={handleDeleteRequest}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+
         </div>
       </main>
 

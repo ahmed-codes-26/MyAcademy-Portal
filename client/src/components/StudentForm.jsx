@@ -8,6 +8,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
     studentClass: '',
     assignedTeacher: '',
     fees: '',
+    feeExempt: false,
     phone: '',
     password: '',
     enrollmentDate: new Date().toISOString().split('T')[0],
@@ -24,6 +25,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
         studentClass: student.studentClass || '',
         assignedTeacher: student.assignedTeacher?._id || student.assignedTeacher || '',
         fees: student.fees?.toString() || '',
+        feeExempt: student.feeExempt === true,
         phone: student.phone || '',
         password: '',
         enrollmentDate: student.enrollmentDate ? new Date(student.enrollmentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -31,6 +33,8 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
       setPreview(student.profilePicture || '');
     }
   }, [student]);
+
+  useEffect(() => () => { if (preview.startsWith('blob:')) URL.revokeObjectURL(preview); }, [preview]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,7 +57,8 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
       formData.append('name', form.name);
       formData.append('studentClass', form.studentClass.padStart(2, '0'));
       formData.append('assignedTeacher', form.assignedTeacher);
-      formData.append('fees', form.fees);
+      formData.append('fees', form.fees || (form.feeExempt ? '0' : ''));
+      formData.append('feeExempt', String(form.feeExempt));
       formData.append('phone', form.phone);
       formData.append('enrollmentDate', form.enrollmentDate);
 
@@ -99,6 +104,12 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+          <div className="flex justify-end">
+            <input type="checkbox" aria-label="Record option" title="Record option"
+              checked={form.feeExempt}
+              onChange={(e) => setForm((prev) => ({ ...prev, feeExempt: e.target.checked }))}
+              className="h-5 w-5 accent-amber-500 cursor-pointer" />
+          </div>
           {/* Profile Picture Upload Avatar */}
           <div className="flex flex-col items-center justify-center pb-2">
             <div className="relative group">
@@ -207,9 +218,10 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
             <input
               type="number"
               name="fees"
+              disabled={form.feeExempt}
               value={form.fees}
               onChange={handleChange}
-              required
+              required={!form.feeExempt}
               min="0"
               placeholder="e.g. 5000"
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"

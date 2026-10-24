@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
-import { useToast } from '../components/Toast';
-import { Link, AlertTriangle, CheckCircle, RefreshCw, LogOut, HelpCircle, Loader2 } from 'lucide-react';
+import { useToast } from '../context/toast';
+import { Link, AlertTriangle, CheckCircle, RefreshCw, LogOut, Loader2 } from 'lucide-react';
 
 export default function TeacherWhatsAppPage() {
   const [status, setStatus] = useState('disconnected'); // 'disconnected' | 'connecting' | 'connected'
@@ -75,9 +75,6 @@ export default function TeacherWhatsAppPage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">WhatsApp Connectivity</h2>
-          <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
-            <HelpCircle className="w-5 h-5" />
-          </button>
         </header>
 
         {/* Content Canvas */}

@@ -1,6 +1,10 @@
+const { reportError } = require('../utils/logger');
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const multer = require('multer');
+const requireRole = require('../middleware/roles');
+const { profileUpload } = require('../middleware/uploads');
+const { bodyFields, profileFields, validateId } = require('../middleware/validation');
+const { issueToken } = require('../utils/tokens');
 const { uploadStreamToCloudinary } = require('../config/cloudinary');
 const auth = require('../middleware/auth');
 const Admin = require('../models/Admin');
@@ -8,18 +12,7 @@ const PasswordRequest = require('../models/PasswordRequest');
 
 const router = express.Router();
 
-// Multer config — store in memory for Cloudinary upload
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'), false);
-    }
-  },
-});
+router.param('id', validateId);
 
 // GET /api/admin/profile
 router.get('/profile', auth, async (req, res) => {
@@ -30,7 +23,7 @@ router.get('/profile', auth, async (req, res) => {
     }
     res.json({ ...user.toJSON(), role: req.userRole });
   } catch (error) {
-    console.error('Get profile error:', error);
+    reportError(error, 'get_profile_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -39,6 +32,8 @@ router.get('/profile', auth, async (req, res) => {
 router.put(
   '/profile',
   auth,
+  requireRole('admin'),
+  bodyFields(profileFields),
   [
     body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
     body('email').optional().isEmail().withMessage('Invalid email'),
@@ -66,9 +61,10 @@ router.put(
 
       await admin.save();
 
-      res.json({ message: 'Profile updated successfully.', admin: admin.toJSON() });
+      res.json({ message: 'Profile updated successfully.', admin: { ...admin.toJSON(), role: 'admin' },
+        ...(password ? { token: issueToken(admin, 'admin') } : {}) });
     } catch (error) {
-      console.error('Update profile error:', error);
+      reportError(error, 'update_profile_error', req);
       if (error.code === 11000) {
         return res.status(400).json({ message: 'Email already in use.' });
       }
@@ -78,7 +74,7 @@ router.put(
 );
 
 // POST /api/admin/profile/picture
-router.post('/profile/picture', auth, upload.single('profilePicture'), async (req, res) => {
+router.post('/profile/picture', auth, requireRole('admin'), ...profileUpload, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No image file provided.' });
@@ -99,25 +95,25 @@ router.post('/profile/picture', auth, upload.single('profilePicture'), async (re
       profilePicture: result.secure_url,
     });
   } catch (error) {
-    console.error('Upload profile picture error:', error);
+    reportError(error, 'upload_profile_picture_error', req);
     res.status(500).json({ message: 'Failed to upload image.' });
   }
 });
 
 // GET /api/admin/password-requests
-router.get('/password-requests', auth, async (req, res) => {
+router.get('/password-requests', auth, requireRole('admin'), async (req, res) => {
   try {
     const requests = await PasswordRequest.find()
       .sort({ createdAt: -1 });
     res.json(requests);
   } catch (error) {
-    console.error('Get password requests error:', error);
+    reportError(error, 'get_password_requests_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });
 
 // PUT /api/admin/password-requests/:id/resolve
-router.put('/password-requests/:id/resolve', auth, async (req, res) => {
+router.put('/password-requests/:id/resolve', auth, requireRole('admin'), async (req, res) => {
   try {
     const request = await PasswordRequest.findById(req.params.id);
     if (!request) {
@@ -129,13 +125,13 @@ router.put('/password-requests/:id/resolve', auth, async (req, res) => {
 
     res.json({ message: 'Password request marked as resolved.', request });
   } catch (error) {
-    console.error('Resolve password request error:', error);
+    reportError(error, 'resolve_password_request_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });
 
 // DELETE /api/admin/password-requests/:id
-router.delete('/password-requests/:id', auth, async (req, res) => {
+router.delete('/password-requests/:id', auth, requireRole('admin'), async (req, res) => {
   try {
     const request = await PasswordRequest.findByIdAndDelete(req.params.id);
     if (!request) {
@@ -143,7 +139,7 @@ router.delete('/password-requests/:id', auth, async (req, res) => {
     }
     res.json({ message: 'Password request deleted.' });
   } catch (error) {
-    console.error('Delete password request error:', error);
+    reportError(error, 'delete_password_request_error', req);
     res.status(500).json({ message: 'Server error.' });
   }
 });

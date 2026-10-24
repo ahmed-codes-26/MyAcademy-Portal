@@ -1,5 +1,7 @@
+import profileImage from '../utils/profileImage';
+import logoUrl from '../assets/logo.svg';
 import { Menu } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/auth';
 
 export default function MobileHeader() {
   const { admin } = useAuth();
@@ -28,9 +30,8 @@ export default function MobileHeader() {
         </button>
         <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 shadow-xs border border-slate-200/80 bg-white flex items-center justify-center p-0.5">
           <img
-            src="/logo-30.webp"
-            srcSet="/logo-30.webp 1x, /logo-60.webp 2x"
-            width={30}
+            src={logoUrl}
+              width={30}
             height={30}
             alt="MyAcademy Logo"
             className="w-full h-full object-cover rounded-full"
@@ -44,7 +45,7 @@ export default function MobileHeader() {
       <div className="flex items-center gap-2">
         {admin?.profilePicture ? (
           <img
-            src={admin.profilePicture}
+            src={profileImage(admin.profilePicture, 32)}
             width={32}
             height={32}
             alt={admin.name}

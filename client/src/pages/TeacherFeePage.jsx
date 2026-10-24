@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
-import { useToast } from '../components/Toast';
-import { CreditCard, Calendar, Check, Loader2, HelpCircle, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '../context/toast';
+import { CreditCard, Calendar, Check, Loader2, Eye, EyeOff } from 'lucide-react';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -81,9 +81,6 @@ export default function TeacherFeePage() {
             >
               {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
               <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
-            </button>
-            <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
-              <HelpCircle className="w-5 h-5" />
             </button>
           </div>
         </header>
@@ -193,7 +190,7 @@ export default function TeacherFeePage() {
                                   : 'bg-rose-50 text-rose-700 border border-rose-100'
                               }`}
                             >
-                              {isPaid ? 'Submitted' : 'Pending'}
+                              {isPaid ? 'Paid' : 'Pending'}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">

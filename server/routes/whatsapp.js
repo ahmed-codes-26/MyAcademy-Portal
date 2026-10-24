@@ -1,3 +1,4 @@
+const { reportError } = require('../utils/logger');
 const express = require('express');
 const auth = require('../middleware/auth');
 const { getSessionStatus, disconnectSession } = require('../utils/whatsappManager');
@@ -23,7 +24,7 @@ router.get('/status', (req, res) => {
     const statusInfo = getSessionStatus(req.userId);
     res.json(statusInfo);
   } catch (error) {
-    console.error('Fetch WhatsApp status error:', error);
+    reportError(error, 'fetch_whatsapp_status_error', req);
     res.status(500).json({ message: 'Server error retrieving WhatsApp status.' });
   }
 });
@@ -37,7 +38,7 @@ router.post('/disconnect', async (req, res) => {
     await disconnectSession(req.userId);
     res.json({ message: 'WhatsApp session disconnected and logged out successfully.' });
   } catch (error) {
-    console.error('Disconnect WhatsApp error:', error);
+    reportError(error, 'disconnect_whatsapp_error', req);
     res.status(500).json({ message: 'Server error during WhatsApp disconnection.' });
   }
 });

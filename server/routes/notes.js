@@ -1,18 +1,17 @@
+const { reportError } = require('../utils/logger');
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
+const crypto = require('crypto');
+const { noteUpload, imageExtensions } = require('../middleware/uploads');
+const { bodyFields, text, validateId } = require('../middleware/validation');
+const { classNumber, classVariants, canReadNote, deliveryType, publicNote } = require('../utils/noteAccess');
 const auth = require('../middleware/auth');
 const Note = require('../models/Note');
+const { noteFolder } = require('../utils/noteStorage');
 const cloudinary = require('../config/cloudinary');
 
 const router = express.Router();
 
-// Configure multer memory storage
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file limit
-});
+router.param('id', validateId);
 
 /**
  * GET /api/notes/:id/download
@@ -22,30 +21,29 @@ const upload = multer({
 router.get('/:id/download', auth, async (req, res) => {
   try {
     const note = await Note.findById(req.params.id);
-    if (!note) {
+    if (!note || !canReadNote(req, note)) {
       return res.status(404).json({ message: 'Note not found.' });
     }
 
-    // Safety fallback: if publicId is missing (e.g. legacy notes), return direct fileUrl
+    // A legacy public URL is not an authorization mechanism.
     if (!note.publicId) {
-      console.warn(`Note ${note._id} publicId is missing. Returning direct file URL.`);
-      return res.json({ downloadUrl: note.fileUrl });
+      return res.status(409).json({ message: 'This legacy note must be re-uploaded before it can be downloaded securely.' });
     }
 
-    const isImage = ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(note.fileType.toUpperCase());
+    const isImage = imageExtensions.has(note.fileType.toLowerCase());
     
     // Generate signed URL bypassing any delivery blocks
     const signedUrl = cloudinary.utils.private_download_url(note.publicId, note.fileType.toLowerCase(), {
       public_id: note.publicId,
-      type: 'upload',
+      type: deliveryType(note),
       resource_type: isImage ? 'image' : 'raw',
       attachment: true,
-      expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour expiration
+      expires_at: Math.floor(Date.now() / 1000) + 300 // Five-minute download grant.
     });
 
     res.json({ downloadUrl: signedUrl });
   } catch (error) {
-    console.error('Generate download URL error:', error);
+    reportError(error, 'generate_download_url_error', req);
     res.status(500).json({ message: 'Error generating download URL.' });
   }
 });
@@ -58,12 +56,14 @@ router.use(auth);
  */
 router.get('/', async (req, res) => {
   try {
-    const notes = await Note.find({})
+    const filter = req.userRole === 'student' ? { class: { $in: classVariants(req.user.studentClass) } } : {};
+    const notes = await Note.find(filter)
+      .select('-fileUrl -publicId')
       .populate('uploadedBy', 'name batchName')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }).lean();
     res.json(notes);
   } catch (error) {
-    console.error('Fetch notes error:', error);
+    reportError(error, 'fetch_notes_error', req);
     res.status(500).json({ message: 'Server error loading notes list.' });
   }
 });
@@ -96,13 +96,13 @@ router.delete('/:id', async (req, res) => {
     // Terminate asset on Cloudinary if publicId is present
     if (note.publicId) {
       try {
-        const isImage = ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(note.fileType.toUpperCase());
+        const isImage = imageExtensions.has(note.fileType.toLowerCase());
         const resourceType = isImage ? 'image' : 'raw';
-        await cloudinary.uploader.destroy(note.publicId, { resource_type: resourceType });
-        console.log(`Cloudinary asset deleted successfully: ${note.publicId}`);
+        const result = await cloudinary.uploader.destroy(note.publicId, { resource_type: resourceType, type: deliveryType(note), invalidate: true });
+        if (!['ok', 'not found'].includes(result?.result)) throw new Error('Storage deletion did not complete.');
       } catch (cloudinaryErr) {
-        console.error(`Failed to delete Cloudinary asset ${note.publicId}:`, cloudinaryErr.message);
-        // Fall through to delete from DB anyway so the app state stays clean
+        reportError(cloudinaryErr, 'failed_to_delete_cloudinary_asset', req);
+        return res.status(502).json({ message: 'Could not delete the stored file. Please retry; your note is still available.' });
       }
     }
 
@@ -110,7 +110,7 @@ router.delete('/:id', async (req, res) => {
     await Note.findByIdAndDelete(note._id);
     res.json({ message: 'Note deleted successfully.' });
   } catch (error) {
-    console.error('Delete note error:', error);
+    reportError(error, 'delete_note_error', req);
     res.status(500).json({ message: 'Server error deleting note.' });
   }
 });
@@ -130,11 +130,13 @@ const formatBytes = (bytes) => {
  * POST /api/notes
  * Upload a study note directly to Cloudinary and save details in MongoDB notes collection.
  */
-router.post('/', upload.single('file'), async (req, res) => {
+router.post('/', ...noteUpload, bodyFields({ displayName: text(200), class: text(10),
+  subject: text(80), description: text(2000) }), async (req, res) => {
   try {
     const { displayName, class: grade, subject, description } = req.body;
     
-    if (!displayName || !grade || !subject) {
+    if (!displayName?.trim() || classNumber(grade) === null ||
+        !Note.schema.path('subject').enumValues.includes(subject)) {
       return res.status(400).json({ message: 'Display name, class, and subject are required.' });
     }
 
@@ -148,37 +150,25 @@ router.post('/', upload.single('file'), async (req, res) => {
     const fileSizeStr = formatBytes(req.file.size);
 
     // Extract file type/extension
-    const ext = path.extname(req.file.originalname).toUpperCase().replace('.', '') || 'RAW';
+    const ext = req.file.verifiedExtension.toUpperCase();
 
     // Determine Cloudinary resource_type: 'image' for images, 'raw' for documents/others
-    const isImage = ['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(ext);
+    const isImage = imageExtensions.has(ext.toLowerCase());
     const resourceType = isImage ? 'image' : 'raw';
 
     // Sanitize filename to prevent URL encoding issues with special characters (+, spaces, parenthesis)
-    const sanitizedName = path.parse(req.file.originalname).name.replace(/[^a-zA-Z0-9]/g, '_');
+    const assetName = `${crypto.randomUUID()}${resourceType === 'raw' ? `.${ext.toLowerCase()}` : ''}`;
 
-    // Upload to Cloudinary using upload_stream (ephemeral file system safe)
-    const uploadStreamPromise = () => {
-      return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: 'myacademy_notes',
-            resource_type: resourceType,
-            public_id: `${sanitizedName}_${Date.now()}`,
-          },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(req.file.buffer);
-      });
-    };
-
-    const cloudinaryResult = await uploadStreamPromise();
+    const folder = noteFolder({ class: grade, subject, uploadedBy: teacherId });
+    const cloudinaryResult = await cloudinary.uploadStreamToCloudinary(req.file.buffer, {
+      type: 'authenticated', resource_type: resourceType, public_id: `${folder}/${assetName}`,
+      ...(process.env.CLOUDINARY_FOLDER_MODE !== 'fixed' ? { asset_folder: folder, display_name: displayName.trim() } : {}),
+      overwrite: false,
+    });
 
     // Save note metadata in MongoDB
-    const note = await Note.create({
+    let note;
+    try { note = await Note.create({
       displayName,
       class: grade,
       subject,
@@ -188,18 +178,21 @@ router.post('/', upload.single('file'), async (req, res) => {
       publicId: cloudinaryResult.public_id,
       fileSize: fileSizeStr,
       fileType: ext,
-    });
+    }); } catch (error) {
+      // Do not leave a new file orphaned if metadata validation/storage fails.
+      try { await cloudinary.uploader.destroy(cloudinaryResult.public_id, { resource_type: resourceType, type: 'authenticated' }); }
+      catch (cleanupError) { reportError(cleanupError, 'orphaned_note_cleanup_failed', req); }
+      throw error;
+    }
 
     // Populate and return
     const populatedNote = await Note.findById(note._id).populate('uploadedBy', 'name batchName');
 
-    res.status(201).json(populatedNote);
+    res.status(201).json(publicNote(populatedNote));
   } catch (error) {
-    console.error('Upload note error:', error);
+    reportError(error, 'upload_note_error', req);
     res.status(500).json({ message: 'Server error uploading file. Please try again.' });
   }
 });
 
 module.exports = router;
-
-// Trigger nodemon reload trigger

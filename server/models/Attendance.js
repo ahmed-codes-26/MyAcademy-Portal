@@ -27,5 +27,6 @@ const attendanceSchema = new mongoose.Schema(
 
 // Compound unique index to prevent duplicate attendance records for a student on the same day
 attendanceSchema.index({ student: 1, date: 1 }, { unique: true });
+attendanceSchema.index({ teacher: 1, date: 1 });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

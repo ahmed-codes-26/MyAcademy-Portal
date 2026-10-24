@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
-import { useToast } from '../components/Toast';
-import { useAuth } from '../context/AuthContext';
-import { Users, Clock, TrendingUp, HelpCircle, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '../context/toast';
+import { useAuth } from '../context/auth';
+import { Users, Clock, TrendingUp, Eye, EyeOff } from 'lucide-react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -104,9 +104,6 @@ export default function TeacherDashboardPage() {
             >
               {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
               <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
-            </button>
-            <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
-              <HelpCircle className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
               <div className="text-right">

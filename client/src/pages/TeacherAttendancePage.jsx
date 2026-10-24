@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
-import { useToast } from '../components/Toast';
-import { ChevronLeft, ChevronRight, Check, Edit2, Calendar, HelpCircle, Loader2, Trash2 } from 'lucide-react';
+import { useToast } from '../context/toast';
+import { ChevronLeft, ChevronRight, Check, Edit2, Calendar, Loader2, Trash2, X } from 'lucide-react';
 
 export default function TeacherAttendancePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -18,6 +18,8 @@ export default function TeacherAttendancePage() {
   const [isAllPresent, setIsAllPresent] = useState(false);
 
   const toast = useToast();
+  const calendarRef = useRef(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Format date to local YYYY-MM-DD
   const formatLocalDate = (date) => {
@@ -219,7 +221,7 @@ export default function TeacherAttendancePage() {
   };
 
   const selectedDateFormatted = selectedDate.toLocaleDateString('en-PK', {
-    weekday: 'short',
+    weekday: 'long',
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -240,72 +242,52 @@ export default function TeacherAttendancePage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Attendance Management</h2>
-          <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
-            <HelpCircle className="w-5 h-5" />
-          </button>
         </header>
 
         {/* Content Canvas */}
         <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
-          {/* Calendar and Header Controls Row */}
-          <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
-            {/* Left Header Info */}
-            <div className="flex-1 space-y-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-amber-500" />
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Selected Date</span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <h1 className="text-2xl font-bold text-slate-900 leading-none">
-                  {isTodaySelected ? 'Today' : selectedDateFormatted}
-                  {!isTodaySelected && (
-                    <span className="text-sm font-semibold text-slate-400 block sm:inline sm:ml-2">
-                      ({selectedDate.toLocaleDateString('en-PK')})
-                    </span>
-                  )}
+          {/* Compact date strip keeps the roster directly below the controls. */}
+          <section aria-label="Attendance date controls" className="bg-white border border-slate-200 rounded-xl shadow-sm px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg shrink-0"><Calendar className="w-5 h-5" /></div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Attendance date</p>
+                <h1 className="text-sm sm:text-base font-bold text-slate-900">{selectedDateFormatted}
+                  {isTodaySelected && <span className="ml-2 text-[10px] font-semibold text-amber-700 bg-amber-50 rounded-full px-2 py-0.5">Today</span>}
                 </h1>
-
-                {/* Action Buttons when Submitted */}
-                {isSubmitted && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {!isEditing && (
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-fit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                        Edit Attendance
-                      </button>
-                    )}
-                    <button
-                      onClick={handleResetAttendance}
-                      disabled={deletingAttendance}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition-colors shadow-sm w-fit disabled:opacity-50"
-                    >
-                      {deletingAttendance ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3.5 h-3.5" />
-                      )}
-                      Reset Attendance
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
-
-            {/* Custom Calendar Widget (Top Right) */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 w-full lg:w-[320px] shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
+              {isSubmitted && <>
+                {!isEditing && <button onClick={() => setIsEditing(true)} className="flex items-center gap-1.5 px-3 py-2 border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5" />Edit Attendance</button>}
+                <button onClick={handleResetAttendance} disabled={deletingAttendance} className="flex items-center gap-1.5 px-3 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg transition-colors disabled:opacity-50">
+                  {deletingAttendance ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}Reset Attendance
+                </button>
+              </>}
+              <button type="button" aria-haspopup="dialog" aria-controls="attendance-calendar" aria-expanded={calendarOpen}
+                onClick={() => { setCurrentCalendarMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)); setCalendarOpen(true); calendarRef.current.showModal(); }}
+                className="flex items-center gap-2 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors">
+                <Calendar className="w-4 h-4" />Choose date
+              </button>
+            </div>
+          </section>
+          <dialog ref={calendarRef} id="attendance-calendar" aria-labelledby="attendance-calendar-heading"
+            onClose={() => setCalendarOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) calendarRef.current.close(); }}
+            className="m-auto w-[min(360px,calc(100vw-32px))] max-h-[calc(100dvh-32px)] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm modal-enter">
+            <div className="flex items-center justify-between mb-4">
+              <h2 id="attendance-calendar-heading" className="text-base font-bold text-slate-900">Choose attendance date</h2>
+              <button aria-label="Close calendar" onClick={() => calendarRef.current.close()} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
               <div className="flex justify-between items-center mb-3">
                 <button
-                  onClick={handlePrevMonth}
+                  aria-label="Previous month" onClick={handlePrevMonth}
                   className="p-1 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <h4 className="text-sm font-bold text-slate-700">{monthName}</h4>
                 <button
-                  onClick={handleNextMonth}
+                  aria-label="Next month" onClick={handleNextMonth}
                   className="p-1 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -332,8 +314,11 @@ export default function TeacherAttendancePage() {
                   return (
                     <button
                       key={index}
+                      aria-label={date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      aria-pressed={isSelected}
                       onClick={() => {
                         setSelectedDate(date);
+                        calendarRef.current.close();
                         // Shift calendar view month if padding date clicked
                         if (!isCurrentMonth) {
                           setCurrentCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1));
@@ -361,8 +346,8 @@ export default function TeacherAttendancePage() {
                   );
                 })}
               </div>
-            </div>
-          </div>
+
+          </dialog>
 
           {/* Student List Section */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

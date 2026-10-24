@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
-import { useToast } from '../components/Toast';
-import { useAuth } from '../context/AuthContext';
-import { Upload, FileText, FileSpreadsheet, Presentation, File, Download, Loader2, HelpCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { useToast } from '../context/toast';
+import { useAuth } from '../context/auth';
+import { Upload, FileText, FileSpreadsheet, Presentation, File, Download, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 
 const CLASS_OPTIONS = ['9th', '10th', '11th', '12th'];
 const SUBJECT_OPTIONS = ['English', 'Urdu', 'Math', 'Islamiyat', 'Pakistan Studies', 'Chemistry', 'Physics', 'History', 'Geography', 'G Science'];
@@ -223,9 +223,6 @@ export default function TeacherNotesPage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Study Notes Repository</h2>
-          <button className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-50 transition-colors">
-            <HelpCircle className="w-5 h-5" />
-          </button>
         </header>
 
         {/* Content Canvas */}

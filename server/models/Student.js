@@ -36,6 +36,8 @@ const studentSchema = new mongoose.Schema(
       required: [true, 'Fees amount is required'],
       min: [0, 'Fees cannot be negative'],
     },
+    feeExempt: { type: Boolean, default: false, select: false },
+    feeExemptFrom: { type: Date, default: null, select: false },
     feesPaid: {
       type: Number,
       default: 0,
@@ -91,7 +93,12 @@ studentSchema.methods.comparePassword = async function (candidatePassword) {
 studentSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.feeExempt;
+  delete obj.feeExemptFrom;
   return obj;
 };
 
+studentSchema.index({ assignedTeacher: 1, enrollmentDate: 1, name: 1 });
+studentSchema.index({ assignedTeacher: 1, name: 1 });
+studentSchema.index({ createdAt: -1 });
 module.exports = mongoose.model('Student', studentSchema);
