@@ -7,11 +7,11 @@ export default defineConfig(({ mode }) => {
   const apiOrigin = /^https?:\/\//.test(apiBase) ? new URL(apiBase).origin : '';
   const policy = [
     "default-src 'self'",
-    "script-src 'self'",
+    "script-src 'self' https://www.googletagmanager.com",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "img-src 'self' data: blob: https://res.cloudinary.com",
-    `connect-src 'self' ${apiOrigin}`.trim(),
+    `connect-src 'self' ${apiOrigin} https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com`.trim(),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

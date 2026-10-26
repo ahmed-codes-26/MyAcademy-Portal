@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const compression = require('compression');
 const path = require('node:path');
 const fs = require('node:fs');
+const { createHash } = require('node:crypto');
+const portalRoutes = require('../client/portal-routes.json');
 const { production: defaultProduction, allowedOrigins: defaultOrigins } = require('./config/security');
 const { apiLimiter, auditRequests } = require('./middleware/security');
 const { rejectQueryOperators } = require('./middleware/validation');
@@ -23,6 +25,11 @@ function createApp(options = {}) {
   const production = options.production ?? defaultProduction;
   const allowedOrigins = options.allowedOrigins ?? defaultOrigins;
   const app = express();
+  const frontend = options.staticDir || (process.env.SERVE_CLIENT === 'true' ? path.join(__dirname, '../client/dist') : null);
+  const homeFile = frontend && path.join(frontend, 'index.html');
+  const homeHtml = homeFile && fs.existsSync(homeFile) ? fs.readFileSync(homeFile, 'utf8') : '';
+  const structuredDataHashes = [...homeHtml.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)]
+    .map(match => `'sha256-${createHash('sha256').update(match[1]).digest('base64')}'`);
 
   // Middleware
   app.disable('x-powered-by');
@@ -33,13 +40,21 @@ function createApp(options = {}) {
   app.use(helmet({
     contentSecurityPolicy: { directives: {
       imgSrc: ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'],
-      fontSrc: ["'self'"], connectSrc: ["'self'", ...allowedOrigins],
+      scriptSrc: ["'self'", ...structuredDataHashes, 'https://www.googletagmanager.com'],
+      fontSrc: ["'self'"], connectSrc: ["'self'", ...allowedOrigins, 'https://www.google-analytics.com', 'https://region1.google-analytics.com', 'https://www.googletagmanager.com'],
       upgradeInsecureRequests: production ? [] : null,
     } },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     strictTransportSecurity: production ? { maxAge: 31536000 } : false,
   }));
   app.use('/api', auditRequests);
+  app.use((req, res, next) => {
+    // A production build accidentally served on a preview hostname stays non-indexable.
+    if (req.hostname !== 'myacademy.ahmedcodes.pro' || !production || !['/', '/robots.txt', '/sitemap.xml'].includes(req.path)) {
+      res.set('X-Robots-Tag', 'noindex, follow');
+    }
+    next();
+  });
   app.use((req, res, next) => {
     if (production && !req.secure && req.path !== '/api/health') {
       return res.status(400).json({ message: 'HTTPS is required.' });
@@ -77,9 +92,9 @@ function createApp(options = {}) {
   });
 
   // Optional single-service deployment. API-only hosting remains unchanged.
-  const frontend = options.staticDir || (process.env.SERVE_CLIENT === 'true' ? path.join(__dirname, '../client/dist') : null);
   if (frontend && fs.existsSync(path.join(frontend, 'index.html'))) {
     app.use(express.static(frontend, {
+      index: false,
       etag: true,
       setHeaders(res, file) {
         res.set('Cache-Control', file.includes(`${path.sep}assets${path.sep}`)
@@ -88,7 +103,9 @@ function createApp(options = {}) {
     }));
     app.get(/^(?!\/api(?:\/|$)).*/, (req, res) => {
       res.set('Cache-Control', 'no-cache');
-      res.sendFile(path.join(frontend, 'index.html'));
+      if (req.path === '/') return res.sendFile(path.join(frontend, 'index.html'));
+      if (portalRoutes.includes(req.path)) return res.sendFile(path.join(frontend, 'portal.html'));
+      res.status(404).sendFile(path.join(frontend, '404.html'));
     });
   }
 

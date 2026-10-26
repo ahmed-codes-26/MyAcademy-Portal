@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/auth';
+import { dashboardPath } from '../utils/dashboardPath';
 
 export default function ProtectedRoute({ children, role }) {
   const { isAuthenticated, loading, admin } = useAuth();
@@ -20,7 +21,7 @@ export default function ProtectedRoute({ children, role }) {
   }
 
   if (role && admin?.role !== role) {
-    return <Navigate to={admin?.role === 'teacher' ? '/teacher/dashboard' : '/'} replace />;
+    return <Navigate to={dashboardPath(admin?.role)} replace />;
   }
 
   return children;

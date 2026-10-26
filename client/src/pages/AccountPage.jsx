@@ -94,7 +94,7 @@ export default function AccountPage() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
         {/* Back button */}
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/admin/dashboard')}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />

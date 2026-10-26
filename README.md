@@ -64,9 +64,11 @@ Tests never load `server/.env`. They start temporary MongoDB processes; the firs
    For a Render web service directly behind Render's reverse proxy, set `TRUST_PROXY=1` in the backend environment. Render terminates HTTPS before forwarding to Express; this setting lets Express recognize the forwarded HTTPS connection. Without it, browser preflight requests receive `400 HTTPS is required`, which appears as a CORS error. Include `https://myacademy-portal-1.onrender.com` in `CORS_ORIGINS` if that is your frontend address (alongside any custom frontend domains you use). Reassess the trusted proxy setting if your proxy topology changes.
 4. Run `npm run db:indexes --prefix server`, then start the API.
 
+The public homepage is prerendered during the build. Set `VITE_PUBLIC_INDEXING=true` only for the canonical production-domain build; other builds default to noindex. The admin dashboard is now `/admin/dashboard`; `/` is public. See [Public launch, SEO, hosting rules and optional analytics](docs/PUBLIC-LAUNCH.md).
+
 Choose one frontend hosting arrangement:
 
-- **Separate static host:** deploy `client/dist`. Configure its SPA fallback to `index.html`, revalidate HTML, and cache fingerprinted `/assets/*` for one year with `immutable`. Enable gzip/Brotli at that host. Set `VITE_API_BASE_URL` to the API URL ending in `/api` **before building** if a same-origin `/api` proxy is unavailable.
+- **Separate static host:** deploy `client/dist`. Serve `/` from `index.html`, rewrite only the exact paths in `client/portal-routes.json` to `portal.html`, and return `404.html` with HTTP 404 for unknown paths. Do not use a catch-all SPA fallback. Configure preview noindex headers as described in the launch guide. Revalidate HTML and cache fingerprinted `/assets/*` for one year with `immutable`. Enable gzip/Brotli at that host. Set `VITE_API_BASE_URL` to the API URL ending in `/api` **before building** if a same-origin `/api` proxy is unavailable.
 - **Express serves both:** build first and set `SERVE_CLIENT=true` on the backend. Express serves the SPA, compresses responses, and applies immutable caching to hashed assets. Keep the same-origin `/api` default.
 
 Private API responses and short-lived download grants are not cached. Do not configure a CDN to cache `/api/*`. Deploy the backend and frontend together. Keep old hashed static assets available during rolling deployments so already-open pages can finish lazy-loading their routes.

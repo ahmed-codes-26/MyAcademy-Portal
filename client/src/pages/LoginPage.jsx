@@ -8,7 +8,10 @@ import api from '../api/axios';
 
 export default function LoginPage() {
   const [mode, setMode] = useState('login'); // 'login' | 'forgot'
-  const [role, setRole] = useState('student'); // 'student' | 'teacher' | 'admin'
+  const [role, setRole] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('role');
+    return ['student', 'teacher', 'admin'].includes(requested) ? requested : 'student';
+  });
   const [emailOrReg, setEmailOrReg] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +34,7 @@ export default function LoginPage() {
       } else if (user?.role === 'teacher') {
         navigate('/teacher/dashboard', { replace: true });
       } else {
-        navigate('/', { replace: true });
+        navigate('/admin/dashboard', { replace: true });
       }
     } catch (err) {
       toast.error(err.response?.data?.message || (err.response
@@ -67,6 +70,7 @@ export default function LoginPage() {
       </div>
 
       <div className="relative w-full max-w-md">
+        <a href="/" className="inline-flex items-center gap-2 text-sm text-slate-600 mb-5"><ArrowLeft size={16} aria-hidden="true" /> Back to homepage</a>
         {/* Centered Vertical Stack Branding */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-white p-2 shadow-md border border-slate-200/80 mb-3 flex items-center justify-center shrink-0">

@@ -1,0 +1,5 @@
+[
+  "/login", "/portal", "/admin/dashboard", "/account",
+  "/teacher/dashboard", "/teacher/attendance", "/teacher/fee", "/teacher/stats",
+  "/teacher/notes", "/teacher/whatsapp", "/teacher/test-notes", "/student/dashboard"
+]

@@ -497,6 +497,8 @@ test('static assets compress and use immutable hashed caching while HTML and pri
   const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'myacademy-static-'));
   fs.mkdirSync(path.join(dir, 'assets'));
   fs.writeFileSync(path.join(dir, 'index.html'), '<!doctype html><html><body>Portal</body></html>');
+  fs.writeFileSync(path.join(dir, 'portal.html'), '<!doctype html><html><body>Portal</body></html>');
+  fs.writeFileSync(path.join(dir, '404.html'), '<!doctype html><html><body>Not found</body></html>');
   fs.writeFileSync(path.join(dir, 'assets/app-abc.js'), '/* compressed fixture */\n'.repeat(200));
   const http = createApp({ staticDir: dir }).listen(0, '127.0.0.1'); await once(http, 'listening');
   const origin = `http://127.0.0.1:${http.address().port}`;

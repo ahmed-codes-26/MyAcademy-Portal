@@ -33,7 +33,7 @@ export default function Navbar() {
 
         {/* Right actions */}
         <div className="flex items-center justify-end w-full sm:w-auto gap-1.5 sm:gap-2">
-          <button onClick={() => navigate('/')} aria-label="Dashboard" className="p-2 text-xs sm:text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Home</button>
+          <button onClick={() => navigate('/admin/dashboard')} aria-label="Dashboard" className="p-2 text-xs sm:text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Dashboard</button>
           <button
             id="nav-account-btn"
             onClick={() => navigate('/account')}
