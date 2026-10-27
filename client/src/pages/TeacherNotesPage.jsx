@@ -1,3 +1,5 @@
+import ConfirmDialog from '../components/ConfirmDialog';
+import PortalQuote from '../components/PortalQuote';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
@@ -26,6 +28,7 @@ export default function TeacherNotesPage() {
 
   const fileInputRef = useRef(null);
   const toast = useToast();
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const handleDownloadNote = async (note) => {
     setDownloadingId(note._id);
@@ -57,13 +60,10 @@ export default function TeacherNotesPage() {
   };
 
   const handleDeleteNote = async (noteId) => {
-    if (!window.confirm('Are you sure you want to delete this study note? This will permanently remove the file from storage.')) {
-      return;
-    }
-
     try {
       await api.delete(`/notes/${noteId}`);
       toast.success('Note deleted successfully.');
+      setDeleteTarget(null);
       setNotes((prev) => prev.filter((n) => n._id !== noteId));
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete the study note.');
@@ -223,10 +223,11 @@ export default function TeacherNotesPage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Study Notes Repository</h2>
+          <PortalQuote />
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
+        <main className="portal-content flex-1 p-4 sm:p-6 space-y-6 min-w-0">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">Course Notes & Resources</h1>
             <p className="text-sm text-slate-500 mt-1">Manage and distribute study materials across your classes.</p>
@@ -468,7 +469,7 @@ export default function TeacherNotesPage() {
                                {admin && note.uploadedBy && (note.uploadedBy._id === admin._id || note.uploadedBy === admin._id) && (
                                  <button
                                    type="button"
-                                   onClick={() => handleDeleteNote(note._id)}
+                                   onClick={() => setDeleteTarget(note)}
                                    className="text-slate-400 hover:text-rose-600 p-2 rounded-full hover:bg-slate-50 transition-colors"
                                    title="Delete note"
                                  >
@@ -486,6 +487,7 @@ export default function TeacherNotesPage() {
             </div>
           </div>
         </main>
+        {deleteTarget && <ConfirmDialog title="Delete study note?" message={`Delete “${deleteTarget.displayName || 'this study note'}”? The file will be permanently removed from storage.`} onCancel={() => setDeleteTarget(null)} onConfirm={() => handleDeleteNote(deleteTarget._id)} />}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import PortalQuote from '../components/PortalQuote';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
@@ -242,10 +243,11 @@ export default function TeacherAttendancePage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Attendance Management</h2>
+          <PortalQuote />
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
+        <main className="portal-content flex-1 p-4 sm:p-6 space-y-6 min-w-0">
           {/* Compact date strip keeps the roster directly below the controls. */}
           <section aria-label="Attendance date controls" className="bg-white border border-slate-200 rounded-xl shadow-sm px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">

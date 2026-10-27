@@ -78,6 +78,67 @@ textarea {
 }
 
 /* Custom scrollbar */
+.student-search-field input:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
+
+.portal-confirm::backdrop {
+  background: rgb(15 23 42 / 45%);
+  backdrop-filter: blur(3px);
+  animation: fade-in 180ms ease-out;
+}
+
+/* Native select behavior with the same surfaces and amber accents as the portal. */
+select {
+  appearance: none;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+select:hover:not(:disabled) { border-color: var(--color-primary); }
+select:focus-visible { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(245 158 11 / 12%); }
+select:disabled { cursor: not-allowed; opacity: .55; }
+select option { background: var(--color-surface); color: var(--color-text-primary); }
+
+/* Customizable native pickers retain keyboard, touch, and form accessibility. */
+@supports (appearance: base-select) {
+  select, select::picker(select) { appearance: base-select; }
+  select { align-items: center; }
+  select::picker-icon { display: none; }
+  select::picker(select) {
+    margin-block: 6px;
+    padding: 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: 0 12px 32px rgb(15 23 42 / 12%);
+    max-height: min(320px, 50vh);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+  select option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+  }
+  select option:hover, select option:focus { background: #fffbeb; outline: none; }
+  select option:checked { background: var(--color-primary-light); color: var(--color-primary-dark); font-weight: 600; }
+  select option:disabled { opacity: .5; }
+  select option::checkmark { display: none; }
+}
+
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -147,6 +208,33 @@ textarea {
 
 .modal-enter {
   animation: slide-up 0.25s ease-out forwards;
+}
+
+/* Shared, subtle entrances for dashboards and portal tabs. */
+@keyframes dashboard-arrive {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes skeleton-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.skeleton { position: relative; overflow: hidden; border-radius: 6px; background: #e2e8f0; }
+.skeleton.rounded-full { border-radius: 9999px; }
+.skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, #ffffff80, transparent); animation: skeleton-shimmer 1.8s ease-in-out infinite; }
+:is(.dashboard-content, .portal-content) > * { animation: dashboard-arrive 420ms ease-out both; }
+:is(.dashboard-content, .portal-content) > :nth-child(2) { animation-delay: 60ms; }
+:is(.dashboard-content, .portal-content) > :nth-child(3) { animation-delay: 120ms; }
+:is(.dashboard-content, .portal-content) > :nth-child(4) { animation-delay: 180ms; }
+.dashboard-content section > .bg-white { transition: box-shadow 200ms ease, border-color 200ms ease; }
+.portal-content .bg-white.border { transition: box-shadow 200ms ease, border-color 200ms ease; }
+@media (hover: hover) {
+  .dashboard-content section > .bg-white:hover { border-color: #cbd5e1; box-shadow: 0 4px 14px rgb(15 23 42 / 5%); }
+  .portal-content .bg-white.border:hover { border-color: #cbd5e1; box-shadow: 0 4px 14px rgb(15 23 42 / 5%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.dashboard-content, .portal-content) > *, .skeleton::after { animation: none !important; }
+  .dashboard-content section > .bg-white, .portal-content .bg-white.border { transition: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,3 +1,4 @@
+import PortalQuote from './PortalQuote';
 import logoUrl from '../assets/logo.svg';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth';
@@ -30,6 +31,8 @@ export default function Navbar() {
             My<span className="text-amber-500">Academy</span>
           </span>
         </div>
+
+        <PortalQuote />
 
         {/* Right actions */}
         <div className="flex items-center justify-end w-full sm:w-auto gap-1.5 sm:gap-2">

@@ -1,3 +1,5 @@
+import ConfirmDialog from '../components/ConfirmDialog';
+import PortalQuote from '../components/PortalQuote';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Search, Pin, PinOff, Trash2, LayoutGrid, List, X, StickyNote, RefreshCw } from 'lucide-react';
 import { useToast } from '../context/toast';
@@ -65,6 +67,7 @@ function NoteEditor({ note, onClose, onSaved }) {
 
 export default function TestNotesPage() {
   const toast = useToast();
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [notes, setNotes] = useState([]);
   const [search, setSearch] = useState('');
   const [date, setDate] = useState('');
@@ -100,9 +103,8 @@ export default function TestNotesPage() {
     finally { setBusy(''); }
   };
   const remove = async (note) => {
-    if (!window.confirm(`Delete note “${note.title || displayDate(note.date)}”? This cannot be undone.`)) return;
     setBusy(note._id);
-    try { await api.delete(`/test-notes/${note._id}`); reload(); toast.success('Note deleted.'); }
+    try { await api.delete(`/test-notes/${note._id}`); reload(); setDeleteTarget(null); toast.success('Note deleted.'); }
     catch { toast.error('Could not delete note. Please retry.'); }
     finally { setBusy(''); }
   };
@@ -119,7 +121,7 @@ export default function TestNotesPage() {
         {note.pinned ? <PinOff size={23} /> : <Pin size={23} />}
       </button>
       <div className="test-note-card-actions"><button className="note-icon" aria-label={`Delete ${note.title || displayDate(note.date)}`}
-        disabled={busy === note._id} onClick={() => remove(note)}><Trash2 size={19} /></button></div>
+        disabled={busy === note._id} onClick={() => setDeleteTarget(note)}><Trash2 size={19} /></button></div>
     </article>
   );
   const pinned = notes.filter((note) => note.pinned);
@@ -130,10 +132,11 @@ export default function TestNotesPage() {
       <TeacherSidebar />
       <div className="lg:ml-[260px]">
         <MobileHeader />
-        <header className="hidden lg:flex h-16 sticky top-0 z-30 items-center bg-white border-b border-slate-200 px-6 shadow-sm">
+        <header className="hidden lg:flex h-16 sticky top-0 z-30 items-center justify-between gap-6 bg-white border-b border-slate-200 px-6 shadow-sm">
           <h2 className="text-lg font-bold text-slate-800">Test notes</h2>
+          <PortalQuote />
         </header>
-        <main className="test-notes-workspace">
+        <main className="portal-content test-notes-workspace">
           <header className="test-notes-toolbar">
             <div className="test-notes-heading"><h1><StickyNote size={25} /> Test notes</h1><p>Plan student tests and keep every assignment in order.</p></div>
             <div className="test-notes-search"><Search size={21} /><input aria-label="Search notes" placeholder="Search notes or date (DD-MM-YYYY)"
@@ -152,6 +155,7 @@ export default function TestNotesPage() {
           {hasMore && !error && <button className="test-notes-more" disabled={loading} onClick={() => setPage((value) => value + 1)}>{loading ? 'Loading…' : 'Load more notes'}</button>}
         </main>
       </div>
+      {deleteTarget && <ConfirmDialog title="Delete test note?" message={`Delete “${deleteTarget.title || displayDate(deleteTarget.date)}”? This cannot be undone.`} onCancel={() => setDeleteTarget(null)} onConfirm={() => remove(deleteTarget)} />}
       {editor && <NoteEditor note={editor} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); reload(); toast.success('Note saved.'); }} />}
     </div>
   );

@@ -1,22 +1,12 @@
-import { useState } from 'react';
-import { Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
+import FeeAmount from './FeeAmount';
+import Skeleton from './Skeleton';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export default function UserTable({ columns, data, onEdit, onDelete, loading, currentPage = 1, itemsPerPage = 10 }) {
-  const [isDataVisible, setIsDataVisible] = useState(false);
 
   const renderCellContent = (col, row, index, serialNumber) => {
-    if (!isDataVisible) {
-      const key = col.key?.toLowerCase() || '';
-      const label = col.label?.toLowerCase() || '';
-      if (key === 'fees' || label.includes('fee')) {
-        return 'PKR ****';
-      }
-      if (key === 'phone' || label.includes('phone')) {
-        return '******';
-      }
-      if (key === 'rollnumber' || label.includes('roll')) {
-        return '******';
-      }
+    if (col.key?.toLowerCase() === 'fees' || col.label?.toLowerCase().includes('fee')) {
+      return <FeeAmount key={row._id} label={`fees for ${row.name}`}>{col.render ? col.render(row, index, serialNumber) : row[col.key]}</FeeAmount>;
     }
     return col.render
       ? col.render(row, index, serialNumber)
@@ -27,8 +17,9 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading, cu
 
   if (loading) {
     return (
-      <div className="overflow-x-auto max-w-full w-full">
-        <table className="w-full text-left">
+      <div aria-busy="true" className="overflow-x-auto max-w-full w-full">
+        <span role="status" className="sr-only">Loading records…</span>
+        <table aria-hidden="true" className="w-full text-left">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
               {columns.map((col) => (
@@ -36,11 +27,11 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading, cu
                   key={col.key}
                   className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500"
                 >
-                  {col.label}
+                  <Skeleton className="h-3.5 w-20" />
                 </th>
               ))}
               <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">
-                Actions
+                <Skeleton className="h-3.5 w-16 ml-auto" />
               </th>
             </tr>
           </thead>
@@ -49,11 +40,11 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading, cu
               <tr key={i} className="border-b border-slate-100">
                 {columns.map((col) => (
                   <td key={col.key} className="px-5 py-4">
-                    <div className="h-4 bg-slate-200 rounded animate-pulse w-24" />
+                    <Skeleton className="h-4 w-24" />
                   </td>
                 ))}
                 <td className="px-5 py-4">
-                  <div className="h-4 bg-slate-200 rounded animate-pulse w-16 ml-auto" />
+                  <Skeleton className="h-4 w-16 ml-auto" />
                 </td>
               </tr>
             ))}
@@ -79,19 +70,6 @@ export default function UserTable({ columns, data, onEdit, onDelete, loading, cu
 
   return (
     <div className="w-full">
-      {/* Privacy Toggle Bar */}
-      <div className="flex items-center justify-end px-4 py-2.5 bg-slate-50/80 border-b border-slate-200">
-        <button
-          type="button"
-          onClick={() => setIsDataVisible(!isDataVisible)}
-          className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-xs font-semibold shadow-sm transition-colors"
-          title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
-        >
-          {isDataVisible ? <EyeOff className="w-3.5 h-3.5 text-slate-500" /> : <Eye className="w-3.5 h-3.5 text-slate-500" />}
-          <span>{isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}</span>
-        </button>
-      </div>
-
       <div className="overflow-x-auto max-w-full w-full">
         <table className="w-full text-left">
           <thead>

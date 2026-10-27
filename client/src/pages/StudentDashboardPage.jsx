@@ -1,4 +1,5 @@
 import profileImage from '../utils/profileImage';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 import logoUrl from '../assets/logo.svg';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -104,14 +105,7 @@ export default function StudentDashboardPage() {
   };
 
   if (loading && !dashboardData) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-          <p className="text-slate-500 text-sm font-medium">Loading Student Portal...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!dashboardData && dashboardError) {
@@ -222,7 +216,7 @@ export default function StudentDashboardPage() {
 
       {dashboardError && <div role="alert" className="mx-auto w-[calc(100%-32px)] max-w-[1392px] mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{dashboardError} <button className="underline font-semibold ml-2" onClick={() => setRevision((value) => value + 1)}>Retry</button></div>}
       {/* 2. Main Content Area */}
-      <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1 min-w-0">
+      <main className="dashboard-content max-w-[1440px] mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1 min-w-0">
         {/* Hero Section */}
         <section className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-5 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -405,9 +399,7 @@ export default function StudentDashboardPage() {
                 Rs. {(fee?.amount || 0).toLocaleString('en-PK')}
               </p>
               <p className="text-xs text-slate-500 font-medium mt-1">
-                {fee?.status === 'PAID'
-                  ? `Paid: Rs. ${(fee?.paidAmount || 0).toLocaleString('en-PK')}`
-                  : `Pending: Rs. ${((fee?.amount || 0) - (fee?.paidAmount || 0)).toLocaleString('en-PK')}`}
+                {fee?.status === 'PAID' ? 'Paid: ' : 'Pending: '}Rs. {(fee?.status === 'PAID' ? (fee?.paidAmount || 0) : ((fee?.amount || 0) - (fee?.paidAmount || 0))).toLocaleString('en-PK')}
               </p>
             </div>
           </article>

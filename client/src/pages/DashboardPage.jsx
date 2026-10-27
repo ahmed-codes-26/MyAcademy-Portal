@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import Skeleton from '../components/Skeleton';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 import { useToast } from '../context/toast';
 import Navbar from '../components/Navbar';
 import PasswordRequestCard from '../components/PasswordRequestCard';
@@ -198,11 +200,15 @@ export default function DashboardPage() {
 
   const pendingRequests = passwordRequests.filter((r) => r.status === 'pending');
 
+  if (loadingData || loadingRequests) {
+    return <DashboardSkeleton variant="admin" />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 w-full max-w-full overflow-x-hidden">
       <Navbar />
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
+      <main className="dashboard-content max-w-[1440px] mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
@@ -317,12 +323,12 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {loadingRequests ? (
                 [...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
+                  <div key={i} className="bg-white rounded-xl border border-slate-200 p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-200 rounded-lg shrink-0" />
+                      <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
                       <div className="flex-1 space-y-2 min-w-0">
-                        <div className="h-4 bg-slate-200 rounded w-32" />
-                        <div className="h-3 bg-slate-100 rounded w-24" />
+                        <Skeleton className="h-4 w-32 max-w-full" />
+                        <Skeleton className="h-3 w-24 max-w-full" />
                       </div>
                     </div>
                   </div>

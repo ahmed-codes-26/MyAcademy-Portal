@@ -1,3 +1,4 @@
+import PortalQuote from '../components/PortalQuote';
 import { useState, useEffect, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
@@ -75,10 +76,11 @@ export default function TeacherWhatsAppPage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">WhatsApp Connectivity</h2>
+          <PortalQuote />
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full min-w-0">
+        <main className="portal-content flex-1 p-4 sm:p-6 flex flex-col items-center justify-center max-w-lg mx-auto w-full min-w-0">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">WhatsApp Setup</h1>
             <p className="text-sm text-slate-500 mt-1">Link your personal WhatsApp account to send alerts directly from the portal.</p>

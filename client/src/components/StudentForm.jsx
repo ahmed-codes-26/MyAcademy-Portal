@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Camera, User, Eye, EyeOff } from 'lucide-react';
+import { FeeVisibilityButton } from './FeeAmount';
 
 export default function StudentForm({ student, teachers, onSubmit, onClose }) {
   const isEditing = !!student;
@@ -14,6 +15,7 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
     enrollmentDate: new Date().toISOString().split('T')[0],
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showFees, setShowFees] = useState(false);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -212,23 +214,33 @@ export default function StudentForm({ student, teachers, onSubmit, onClose }) {
 
           {/* Fees (PKR) */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+            <label htmlFor="student-fees" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
               Fees (PKR) <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
-              name="fees"
-              disabled={form.feeExempt}
-              value={form.fees}
-              onChange={handleChange}
-              required={!form.feeExempt}
-              min="0"
-              placeholder="e.g. 5000"
-              className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
-            />
-            {form.fees && (
-              <p className="text-xs text-slate-400 mt-1">{formatPKR(form.fees)}</p>
-            )}
+            <div className="relative">
+              <input
+                id="student-fees"
+                aria-label="Fees (PKR)"
+                type={showFees ? 'text' : 'password'}
+                inputMode="numeric"
+                pattern="[0-9]+"
+                autoComplete="off"
+                name="fees"
+                disabled={form.feeExempt}
+                value={form.fees}
+                onChange={handleChange}
+                required={!form.feeExempt}
+                min="0"
+                placeholder="e.g. 5000"
+                className="w-full pl-3 pr-12 py-2.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-colors"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                <FeeVisibilityButton visible={showFees} onToggle={() => setShowFees((value) => !value)} label="student fees" />
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1 min-h-4">
+              {showFees && form.fees ? formatPKR(form.fees) : '\u00a0'}
+            </p>
           </div>
 
           {/* Phone and Password — side by side */}

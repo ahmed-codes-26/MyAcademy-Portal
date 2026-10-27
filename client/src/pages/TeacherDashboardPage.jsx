@@ -1,10 +1,13 @@
+import FeeAmount from '../components/FeeAmount';
+import PortalQuote from '../components/PortalQuote';
 import { useState, useEffect } from 'react';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
 import { useToast } from '../context/toast';
 import { useAuth } from '../context/auth';
-import { Users, Clock, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { Users, Clock, TrendingUp } from 'lucide-react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -21,7 +24,6 @@ import {
 export default function TeacherDashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isDataVisible, setIsDataVisible] = useState(false);
   const { admin } = useAuth();
   const toast = useToast();
 
@@ -41,14 +43,7 @@ export default function TeacherDashboardPage() {
   }, [toast]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center lg:pl-[260px]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-500 text-sm font-medium">Loading Dashboard...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton variant="teacher" />;
   }
 
   const { metrics, monthlyPresentPct, attendanceTrends, students } = data || {
@@ -95,16 +90,8 @@ export default function TeacherDashboardPage() {
         {/* Desktop Top bar header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Teacher Dashboard</h2>
+          <PortalQuote />
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setIsDataVisible(!isDataVisible)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
-              title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
-            >
-              {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
-              <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
-            </button>
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-xs font-semibold text-slate-900 leading-none">{admin?.name}</p>
@@ -115,19 +102,7 @@ export default function TeacherDashboardPage() {
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
-          {/* Mobile privacy toggle banner */}
-          <div className="lg:hidden flex justify-end">
-            <button
-              type="button"
-              onClick={() => setIsDataVisible(!isDataVisible)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors shadow-sm"
-              title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
-            >
-              {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
-              <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
-            </button>
-          </div>
+        <main className="dashboard-content flex-1 p-4 sm:p-6 space-y-6 min-w-0">
 
           {/* Summary Metrics */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -135,7 +110,7 @@ export default function TeacherDashboardPage() {
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Fee Received</span>
               <span className="text-2xl font-bold text-slate-900">
-                {isDataVisible ? `PKR ${metrics.feeReceived.toLocaleString('en-PK')}` : 'PKR ****'}
+                <FeeAmount label="fees received">PKR {metrics.feeReceived.toLocaleString('en-PK')}</FeeAmount>
               </span>
               <div className="flex items-center gap-1 text-emerald-600 mt-3 text-xs font-semibold">
                 <TrendingUp className="w-4 h-4" />
@@ -147,7 +122,7 @@ export default function TeacherDashboardPage() {
             <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Fee Remaining</span>
               <span className="text-2xl font-bold text-slate-900">
-                {isDataVisible ? `PKR ${metrics.feeRemaining.toLocaleString('en-PK')}` : 'PKR ****'}
+                <FeeAmount label="fees remaining">PKR {metrics.feeRemaining.toLocaleString('en-PK')}</FeeAmount>
               </span>
               <div className="flex items-center gap-1 text-amber-600 mt-3 text-xs font-semibold">
                 <Clock className="w-4 h-4" />
@@ -276,7 +251,7 @@ export default function TeacherDashboardPage() {
                         <td className="px-6 py-4 text-center font-mono text-xs text-slate-400 font-bold">{index + 1}</td>
                         <td className="px-6 py-4 font-semibold text-slate-900 whitespace-nowrap">{student.name}</td>
                         <td className="px-6 py-4 text-slate-500 font-mono whitespace-nowrap">
-                          {isDataVisible ? student.rollNumber : '******'}
+                          {student.rollNumber}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${getBadgeClass(student.attendancePercentage)}`}>

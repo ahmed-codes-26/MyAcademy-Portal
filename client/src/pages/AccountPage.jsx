@@ -91,7 +91,7 @@ export default function AccountPage() {
     <div className="min-h-screen bg-slate-50 w-full max-w-full overflow-x-hidden">
       <Navbar />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
+      <main className="portal-content max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full">
         {/* Back button */}
         <button
           onClick={() => navigate('/admin/dashboard')}

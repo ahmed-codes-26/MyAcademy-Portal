@@ -1,9 +1,10 @@
+import PortalQuote from '../components/PortalQuote';
 import { useState, useEffect, useCallback } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
 import { useToast } from '../context/toast';
-import { CreditCard, Calendar, Check, Loader2, Eye, EyeOff } from 'lucide-react';
+import { CreditCard, Calendar, Check, Loader2 } from 'lucide-react';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -19,7 +20,6 @@ export default function TeacherFeePage() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
-  const [isDataVisible, setIsDataVisible] = useState(false);
 
   const toast = useToast();
 
@@ -72,21 +72,12 @@ export default function TeacherFeePage() {
         {/* Desktop Top Header */}
         <header className="bg-white sticky top-0 z-30 w-full border-b border-slate-200 shadow-sm hidden lg:flex justify-between items-center px-6 h-16">
           <h2 className="text-lg font-bold text-slate-800">Fee Management</h2>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsDataVisible(!isDataVisible)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
-              title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
-            >
-              {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
-              <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
-            </button>
-          </div>
+          <PortalQuote />
+          
         </header>
 
         {/* Content Canvas */}
-        <main className="flex-1 p-4 sm:p-6 space-y-6 min-w-0">
+        <main className="portal-content flex-1 p-4 sm:p-6 space-y-6 min-w-0">
           {/* Header & Filters Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -94,17 +85,8 @@ export default function TeacherFeePage() {
               <p className="text-sm text-slate-500 mt-1">Track and collect tuition payments for your class.</p>
             </div>
 
-            {/* Dropdown Filters & Privacy Toggle */}
+            {/* Billing period filters */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setIsDataVisible(!isDataVisible)}
-                className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
-                title={isDataVisible ? "Hide Sensitive Data" : "Show Sensitive Data"}
-              >
-                {isDataVisible ? <EyeOff className="w-4 h-4 text-slate-500" /> : <Eye className="w-4 h-4 text-slate-500" />}
-                <span>{isDataVisible ? "Hide Data" : "Show Data"}</span>
-              </button>
               <div className="flex items-center gap-1.5 px-2 text-slate-400">
                 <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Period:</span>
@@ -180,7 +162,7 @@ export default function TeacherFeePage() {
                             {student.name}
                           </td>
                           <td className="px-6 py-4 text-slate-500 font-mono">
-                            {isDataVisible ? student.rollNumber : '******'}
+                            {student.rollNumber}
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span
