@@ -228,16 +228,11 @@ export default function TeacherNotesPage() {
 
         {/* Content Canvas */}
         <main className="portal-content flex-1 p-4 sm:p-6 space-y-6 min-w-0">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">Course Notes & Resources</h1>
-            <p className="text-sm text-slate-500 mt-1">Manage and distribute study materials across your classes.</p>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div className="notes-upload-layout grid grid-cols-1 lg:grid-cols-[minmax(280px,0.85fr)_minmax(0,1.65fr)] gap-6">
             
             {/* Left Column: Note Upload Form (4/12 cols) */}
-            <div className="xl:col-span-4 flex flex-col">
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col h-fit sticky top-20">
+            <div className="notes-upload-panel min-w-0 flex flex-col">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 flex flex-col h-fit">
                 <div className="flex items-center gap-2 mb-6">
                   <Upload className="w-5 h-5 text-amber-500 shrink-0" />
                   <h3 className="text-lg font-bold text-slate-800">Upload New Note</h3>
@@ -377,7 +372,7 @@ export default function TeacherNotesPage() {
             </div>
 
             {/* Right Column: Shared Notes Directory (8/12 cols) */}
-            <div className="xl:col-span-8 flex flex-col gap-6">
+            <div className="notes-repository min-w-0 flex flex-col gap-6">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 bg-slate-50">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
                   Shared Notes Repository
@@ -410,7 +405,7 @@ export default function TeacherNotesPage() {
                     </div>
 
                     {/* Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                       {groupedNotes[groupName].map((note) => {
                         const iconProps = getFileIconProps(note.fileType);
                         const IconComponent = iconProps.icon;

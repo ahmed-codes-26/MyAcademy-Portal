@@ -5,7 +5,7 @@ import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
 import { useToast } from '../context/toast';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Search, CheckCircle2, XCircle, ShieldAlert, Loader2, CalendarDays } from 'lucide-react';
+import { Search, ShieldAlert, Loader2, CheckCircle2, XCircle, CalendarDays, Wallet } from 'lucide-react';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -288,37 +288,21 @@ export default function TeacherStatsPage() {
                   </p>
                 </div>
 
-                {/* Small Card 2: Total Presents */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mb-3">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Presents</span>
-                  <span className="text-3xl font-extrabold text-slate-800">{studentStats.totalPresents}</span>
+                <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3">Attendance summary</h3>
+                  <dl className="divide-y divide-slate-100">
+                    <div className="flex justify-between items-center py-3"><dt className="flex items-center gap-2.5 text-sm font-semibold text-emerald-700"><span className="rounded-lg bg-emerald-50 p-2"><CheckCircle2 className="h-4 w-4" aria-hidden="true" /></span>Present</dt><dd className="text-xl font-bold text-slate-800">{studentStats.totalPresents}</dd></div>
+                    <div className="flex justify-between items-center py-3"><dt className="flex items-center gap-2.5 text-sm font-semibold text-red-700"><span className="rounded-lg bg-red-50 p-2"><XCircle className="h-4 w-4" aria-hidden="true" /></span>Absent</dt><dd className="text-xl font-bold text-slate-800">{studentStats.totalAbsents}</dd></div>
+                    <div className="flex justify-between items-center py-3"><dt className="flex items-center gap-2.5 text-sm font-semibold text-yellow-800"><span className="rounded-lg bg-yellow-50 p-2"><CalendarDays className="h-4 w-4" aria-hidden="true" /></span>On leave</dt><dd className="text-xl font-bold text-slate-800">{studentStats.totalLeaves}</dd></div>
+                  </dl>
                 </div>
 
-                {/* Small Card 3: Total Absents */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-3">
-                    <XCircle className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Absents</span>
-                  <span className="text-3xl font-extrabold text-slate-800">{studentStats.totalAbsents}</span>
-                </div>
-
-                {/* Medium Card 4: Fee Status */}
-                <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
-                  <CalendarDays className="w-6 h-6 text-amber-500 mb-3" />
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">On Leave</span>
-                  <span className="text-3xl font-extrabold text-slate-800">{studentStats.totalLeaves}</span>
-                </div>
-
-                <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center text-center">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                <div className="md:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+                  <span className="flex items-center gap-2.5 text-sm font-semibold text-slate-600"><span className="rounded-lg bg-slate-100 p-2"><Wallet className="h-4 w-4 text-slate-500" aria-hidden="true" /></span>
                     Fee Status ({statsMonth === 'all' ? MONTHS[currentDate.getMonth()] : MONTHS[statsMonth]} {statsMonth === 'all' ? currentDate.getFullYear() : statsYear})
                   </span>
                   <span
-                    className={`px-6 py-2 rounded-full text-base font-extrabold shadow-sm tracking-wider uppercase ${
+                    className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${
                       studentStats.feeStatus === 'submitted'
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -328,23 +312,23 @@ export default function TeacherStatsPage() {
                   </span>
                 </div>
 
-                {[
-                  { title: 'Absent dates', dates: studentStats.absentDates || [], color: 'bg-rose-50 text-rose-700', empty: 'No absences recorded in this period.' },
-                  { title: 'Leave dates', dates: studentStats.leaveDates || [], color: 'bg-amber-50 text-amber-700', empty: 'No leave recorded in this period.' },
-                ].map(({ title, dates, color, empty }) => (
-                  <div key={title} className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <h3 className="text-sm font-bold text-slate-700 mb-4">{title} ({dates.length})</h3>
-                    {dates.length ? (
-                      <ul className="flex flex-wrap gap-2 max-h-64 overflow-y-auto" aria-label={title}>
-                        {dates.map((date) => (
-                          <li key={date} className={`px-3 py-2 rounded-lg text-xs font-semibold ${color}`}>
-                            <time dateTime={date}>{formatAttendanceDate(date)}</time>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : <p className="text-sm text-slate-400">{empty}</p>}
-                  </div>
-                ))}
+                <div className="md:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                  <h3 className="text-sm font-bold text-slate-800 mb-3">Absences & leaves</h3>
+                  <div className="flex flex-wrap gap-4 text-xs font-semibold mb-4"><span className="text-red-700">Absent ({studentStats.totalAbsents})</span><span className="text-yellow-800">Leave ({studentStats.totalLeaves})</span></div>
+                  {(studentStats.absentDates?.length || studentStats.leaveDates?.length) ? (
+                    <ul className="flex flex-wrap gap-2 max-h-64 overflow-y-auto" aria-label="Absent and leave dates">
+                      {[
+                        ...(studentStats.absentDates || []).map((date) => ({ date, label: 'Absent', color: 'bg-red-50 text-red-700 border-red-200' })),
+                        ...(studentStats.leaveDates || []).map((date) => ({ date, label: 'Leave', color: 'bg-yellow-50 text-yellow-800 border-yellow-200' })),
+                      ].sort((a, b) => b.date.localeCompare(a.date)).map(({ date, label, color }) => (
+                        <li key={date + label} className={'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold ' + color}>
+                          <time dateTime={date}>{formatAttendanceDate(date)}</time><span>{label}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-sm text-slate-400">No absences or leaves recorded in this period.</p>}
+                </div>
+
               </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center text-slate-400">

@@ -240,3 +240,16 @@ select option { background: var(--color-surface); color: var(--color-text-primar
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.notes-repository { border-top: 1px solid #e2e8f0; padding-top: 24px; }
+@media (min-width: 1024px) {
+  .notes-upload-layout { height: calc(100dvh - 112px); min-height: 0; animation: none; align-items: start; column-gap: 48px; }
+  .notes-upload-panel, .notes-repository { max-height: 100%; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: none; }
+  .notes-upload-panel::-webkit-scrollbar, .notes-repository::-webkit-scrollbar { display: none; }
+  .notes-repository { padding-left: 24px; margin-left: -24px; border-left: 1px solid #e2e8f0; }
+  .notes-repository::before { display: none; }
+  .notes-repository { position: relative; border-top: 0; padding-top: 0; }
+
+}
+.portal-toast-container { top: max(1rem, env(safe-area-inset-top)); right: max(1rem, env(safe-area-inset-right)); left: max(1rem, env(safe-area-inset-left)); width: auto; max-height: calc(100dvh - 2rem); overflow-y: auto; }
+@media (min-width: 640px) { .portal-toast-container { left: auto; width: 24rem; max-width: calc(100vw - 2rem); } }

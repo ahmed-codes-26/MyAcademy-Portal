@@ -1,5 +1,5 @@
 import PortalQuote from '../components/PortalQuote';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import TeacherSidebar from '../components/TeacherSidebar';
 import MobileHeader from '../components/MobileHeader';
 import api from '../api/axios';
@@ -14,32 +14,38 @@ export default function TeacherWhatsAppPage() {
   const [disconnecting, setDisconnecting] = useState(false);
 
   const toast = useToast();
+  const pendingStatus = useRef(null);
+  const [statusError, setStatusError] = useState('');
 
-  // Fetch connection status
+  // Bound each check and avoid overlapping polling requests.
   const fetchStatus = useCallback(async (showLoader = false) => {
+    if (pendingStatus.current) return;
+    const controller = new AbortController();
+    pendingStatus.current = controller;
     if (showLoader) setLoading(true);
     try {
-      const res = await api.get('/teacher/whatsapp/status');
+      const res = await api.get('/teacher/whatsapp/status', { timeout: 10000, signal: controller.signal });
       setStatus(res.data.status);
       setQrCode(res.data.qrCode);
       setPhone(res.data.phone);
+      setStatusError('');
     } catch {
-      toast.error('Failed to load WhatsApp connection status.');
+      if (!controller.signal.aborted) setStatusError('The connection check is taking too long. Please retry.');
     } finally {
-      if (showLoader) setLoading(false);
+      if (pendingStatus.current === controller) pendingStatus.current = null;
+      if (!controller.signal.aborted) setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
-  // Set up 5-second short polling to track QR scan success or auto-refresh
   useEffect(() => {
-    fetchStatus(true); // Initial load with spinner
-
-    const interval = setInterval(() => {
-      fetchStatus(false); // Background updates without spinner
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [fetchStatus]);
+    fetchStatus(true);
+    const interval = setInterval(() => fetchStatus(false), status === 'connected' ? 15000 : 2000);
+    return () => {
+      clearInterval(interval);
+      pendingStatus.current?.abort();
+      pendingStatus.current = null;
+    };
+  }, [fetchStatus, status]);
 
   // Trigger manual disconnect/logout
   const handleDisconnect = async () => {
@@ -92,6 +98,12 @@ export default function TeacherWhatsAppPage() {
               <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
                 <p className="text-sm font-semibold">Checking connection status...</p>
+              </div>
+            ) : statusError ? (
+              <div className="space-y-4 py-6" role="alert">
+                <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
+                <p className="text-sm text-slate-600">{statusError}</p>
+                <button type="button" onClick={() => fetchStatus(true)} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white">Retry connection check</button>
               </div>
             ) : (
               <div className="w-full space-y-6">

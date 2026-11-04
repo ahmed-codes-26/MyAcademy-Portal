@@ -59,7 +59,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={toast}>
       {children}
       {/* Toast container */}
-      <div aria-live="polite" className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+      <div aria-live="polite" className="portal-toast-container fixed z-[9999] flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => {
           const Icon = ICONS[t.type];
           return (
@@ -68,7 +68,7 @@ export function ToastProvider({ children }) {
               className={`${COLORS[t.type]} ${t.exiting ? 'toast-exit' : 'toast-enter'} pointer-events-auto border rounded-lg px-4 py-3 shadow-lg flex items-start gap-3`}
             >
               <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${ICON_COLORS[t.type]}`} />
-              <p className="text-sm font-medium leading-snug">{t.message}</p>
+              <p className="min-w-0 break-words text-sm font-medium leading-snug [overflow-wrap:anywhere]">{t.message}</p>
             </div>
           );
         })}

@@ -19,18 +19,18 @@
 .test-notes-composer svg { color: var(--color-primary); }
 .test-notes-composer:hover { border-color: #fcd34d; box-shadow: 0 6px 20px #0f172a08; transform: translateY(-2px); }
 .test-notes-status { max-width: 1400px; margin: 0 auto 18px; min-height: 18px; color: var(--color-text-muted); font-size: 12px; }
-.test-notes-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: start; max-width: 1400px; margin: 0 auto; }
+.test-notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; align-items: start; max-width: 1400px; margin: 0 auto; }
 .test-note-card { position: relative; border: 1px solid var(--color-border); border-radius: 16px; background: white; min-width: 0; overflow: hidden; box-shadow: 0 1px 3px #0f172a04; animation: test-note-arrive .26s ease-out both; transition: transform .2s, box-shadow .2s, border-color .2s; }
 .test-note-card:hover { transform: translateY(-3px); border-color: #fcd34d; box-shadow: 0 8px 24px #0f172a09; }
-.test-note-open { display: block; text-align: left; width: 100%; padding: 24px 24px 6px; cursor: pointer; }
-.test-note-open h2 { font-weight: 700; font-size: 22px; line-height: 1.35; margin: 0 28px 18px 0; overflow-wrap: anywhere; letter-spacing: -.3px; }
+.test-note-open { display: block; text-align: left; width: 100%; padding: 18px 18px 8px; cursor: pointer; }
+.test-note-open h2 { font-weight: 700; font-size: 16px; line-height: 1.4; margin: 0 28px 12px 0; overflow-wrap: anywhere; letter-spacing: -.3px; }
 .test-note-open time { display: block; color: var(--color-text-muted); font-size: 12px; margin: -8px 0 16px; }
-.test-note-open p { color: #475569; font-size: 16px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.test-note-open p { color: #475569; font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; overflow: hidden; }
 .test-note-pin { position: absolute; top: 12px; right: 10px; }
 .test-note-card-actions { display: flex; justify-content: flex-end; padding: 0 10px 8px; }
 .test-note-card-actions .note-icon:hover { background: var(--color-error-light); color: var(--color-error); }
 .test-notes-section { max-width: 1400px; margin: 25px auto 14px; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: var(--color-text-secondary); }
-.test-notes-grid.is-list { grid-template-columns: minmax(0, 680px); justify-content: center; }
+.test-notes-grid.is-list { grid-template-columns: minmax(0, 600px); justify-content: center; }
 .test-notes-empty { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 80px 0; color: var(--color-text-muted); text-align: center; animation: test-note-arrive .25s ease-out; }
 .test-notes-empty svg { color: #fbbf24; }
 .test-note-editor { color: var(--color-text-primary); background: white; border: 1px solid var(--color-border); border-radius: 20px; padding: 24px; width: min(680px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); margin: auto; overflow-y: auto; box-shadow: 0 24px 70px #0f172a26; font-family: var(--font-sans); animation: test-note-editor-in .22s ease-out; }
@@ -56,6 +56,34 @@
 @keyframes test-note-arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes test-note-editor-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes test-note-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-@media (max-width: 1199px) { .test-notes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 639px) { .test-notes-workspace { padding: 20px 16px 40px; } .test-notes-toolbar { gap: 12px; } .test-notes-heading h1 { font-size: 24px; } .test-notes-search { flex-basis: 100%; min-width: 0; } .test-notes-filter { margin-right: auto; } .test-notes-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; } .test-notes-composer { margin-top: 24px; font-size: 17px; } .test-note-open { padding: 22px 22px 6px; } .test-note-editor { padding: 18px; } .test-note-editor-actions { gap: 5px; } .test-note-editor-actions button { padding: 10px; } }
+
+@media (max-width: 639px) { .test-notes-workspace { padding: 20px 16px 40px; } .test-notes-toolbar { gap: 12px; } .test-notes-heading h1 { font-size: 24px; } .test-notes-search { flex-basis: 100%; min-width: 0; } .test-notes-filter { margin-right: auto; } .test-notes-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; } .test-notes-composer { margin-top: 24px; font-size: 17px; } .test-note-open { padding: 16px 16px 8px; } .test-note-editor { padding: 18px; } .test-note-editor-actions { gap: 5px; } .test-note-editor-actions button { padding: 10px; } }
 @media (prefers-reduced-motion: reduce) { .test-note-card, .test-notes-empty, .test-note-editor, .test-note-editor::backdrop { animation: none; } .test-notes-workspace *, .test-note-editor * { transition: none; } .test-note-card:hover, .test-notes-composer:hover { transform: none; } }
+
+/* Compact cards use the portal's slate surfaces and amber accents. */
+.test-notes-heading h1 { font-size: 24px; }
+.test-notes-heading p { font-size: 13px; }
+.test-notes-search { border-radius: 10px; padding: 10px 14px; }
+.test-notes-composer { max-width: 600px; padding: 14px 18px; border-radius: 12px; font-size: 14px; font-weight: 500; margin: 24px auto; }
+.test-note-card { border-radius: 12px; background: var(--color-surface); }
+.test-note-card:has(.test-note-pin[aria-pressed=true]) { border-color: #fcd34d; }
+.test-note-card-actions { padding: 0 8px 6px; }
+.test-note-pin { top: 6px; right: 6px; }
+.test-note-editor { border-radius: 16px; }
+.test-note-title-input { font-size: 20px; }
+.test-note-editor textarea { min-height: 180px; font-size: 14px; line-height: 1.65; }
+.test-notes-workspace, .test-notes-workspace *, .test-note-editor, .test-note-editor * { scrollbar-width: none; }
+.test-notes-workspace::-webkit-scrollbar, .test-notes-workspace *::-webkit-scrollbar,
+.test-note-editor::-webkit-scrollbar, .test-note-editor *::-webkit-scrollbar { display: none; }
+/* Scope the document scrollbar change to this page. */
+html:has(.test-notes-workspace), body:has(.test-notes-workspace) { scrollbar-width: none; }
+html:has(.test-notes-workspace)::-webkit-scrollbar, body:has(.test-notes-workspace)::-webkit-scrollbar { display: none; }
+@media (max-width: 639px) {
+  .test-notes-grid { gap: 12px; }
+  .test-notes-heading h1 { font-size: 22px; }
+  .test-notes-filter { flex-wrap: wrap; }
+  .test-note-editor-actions { flex-wrap: wrap; }
+}
+
+/* Improve readability of written notes in previews and the editor. */
+.test-note-open p, .test-note-editor textarea { color: var(--color-text-primary); font-weight: 500; line-height: 1.7; }
